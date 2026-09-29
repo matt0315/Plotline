@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "plotline",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-20",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The React app is served as static assets; only /api/* runs the Worker.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Accounts, sessions, and metadata. Create with: npx wrangler d1 create plotline
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "plotline",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Event documents and venue drawings. Create with: npx wrangler r2 bucket create plotline-files
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "plotline-files" }],
+
+  // Magic-link sign-in emails. Onboard the domain with: npx wrangler email sending enable yourdomain.com
+  "send_email": [{ "name": "EMAIL" }],
+
+  "vars": {
+    "APP_ENV": "production",
+    "EMAIL_FROM": "hello@yourdomain.com",
+    "APP_NAME": "Plotline"
+  },
+
+  "observability": { "enabled": true }
+  // Secrets (npx wrangler secret put …): STRIPE_SECRET_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET, CLOUDCONVERT_API_KEY
+}

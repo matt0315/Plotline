@@ -1,0 +1,51 @@
+import { create } from 'zustand'
+import type { Layer } from '../../types/event'
+
+export type Tool = 'select' | 'pan' | 'measure' | 'calibrate' | 'moveplan'
+
+export interface View {
+  /** World coordinate (metres) at the top-left of the canvas. */
+  x: number
+  y: number
+  /** Pixels per metre. */
+  s: number
+}
+
+interface LayoutViewState {
+  view: View
+  size: { w: number; h: number }
+  selected: string[]
+  tool: Tool
+  snap: boolean
+  hidden: Layer[]
+  showSeats: boolean
+  measure: { a: { x: number; y: number }; b: { x: number; y: number } } | null
+  panel: 'inspector' | 'guests' | 'library' | null
+  /** Tap-to-seat on touch: a guest waiting for a table tap. */
+  armed: string | null
+  set: (p: Partial<LayoutViewState>) => void
+  select: (ids: string[]) => void
+}
+
+export const useLayoutView = create<LayoutViewState>((set) => ({
+  view: { x: -2, y: -2, s: 20 },
+  size: { w: 800, h: 600 },
+  selected: [],
+  tool: 'select',
+  snap: true,
+  hidden: [],
+  showSeats: true,
+  measure: null,
+  armed: null,
+  panel: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'inspector' : null,
+  set: (p) => set(p),
+  select: (selected) => set({ selected }),
+}))
+
+export const SNAP = 0.25
+
+/** Centre of whatever the user is currently looking at, in metres. */
+export const viewCenter = () => {
+  const { view, size } = useLayoutView.getState()
+  return { x: view.x + size.w / 2 / view.s, y: view.y + size.h / 2 / view.s }
+}
