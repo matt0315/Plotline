@@ -16,7 +16,7 @@
     {
       "binding": "DB",
       "database_name": "plotline",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "1160e7b1-f7a0-4678-bcba-3c9fc998aaf5",
       "migrations_dir": "migrations"
     }
   ],
