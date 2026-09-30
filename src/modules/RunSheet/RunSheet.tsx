@@ -5,6 +5,8 @@ import { useUI } from '../../store/ui'
 import { runSheet, type RunRow } from '../../lib/derived'
 import { addMinutes, fmt12, toMinutes } from '../../lib/time'
 import { uid } from '../../lib/id'
+import { dayTitle, sortShifts } from '../../lib/roster'
+import { sectionColor } from '../../data/roster'
 import { Button, Cell, IconButton, PageHeader, focusSoon } from '../../components/ui'
 
 const PHASES: { id: Phase; label: string; tone: string }[] = [
@@ -27,6 +29,50 @@ const shiftFrom = (row: RunRow, delta: number, rows: RunRow[]) => {
   update((d) => {
     for (const s of d.schedule) if (ids.has(s.id)) s.time = addMinutes(s.time, delta)
   })
+}
+
+/** Work rostered before and after the event day — site prep, builds, pack-downs, cleaners. */
+const OtherDays = () => {
+  const d = useEvent((s) => s.doc)!
+  const go = useUI((s) => s.go)
+  const shifts = sortShifts(d.shifts.filter((s) => s.day !== 0))
+  if (!shifts.length) return null
+  const days = [...new Set(shifts.map((s) => s.day))]
+  return (
+    <section className="card mt-5 overflow-hidden">
+      <header className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+        <h2 className="text-sm font-semibold">Before & after the event</h2>
+        <span className="text-xs text-slate-400">{shifts.length}</span>
+        <div className="flex-1" />
+        <Button size="sm" variant="ghost" onClick={() => go('crew')}>
+          Edit on roster
+        </Button>
+      </header>
+      {days.map((day) => (
+        <div key={day} className="border-b border-slate-100 last:border-0">
+          <div className="bg-slate-50/70 px-4 py-1.5 text-xs font-semibold text-slate-600">{dayTitle(d.date, day)}</div>
+          {shifts
+            .filter((s) => s.day === day)
+            .map((s) => {
+              const sup = s.supplierId ? d.suppliers.find((x) => x.id === s.supplierId) : undefined
+              const who = sup ? sup.name || sup.category : s.crewIds.map((id) => d.crew.find((c) => c.id === id)?.name).filter(Boolean).join(', ') || `${s.needed} to fill`
+              return (
+                <button key={s.id} onClick={() => go('crew', s.id)} className="flex w-full items-center gap-3 px-4 py-1.5 text-left text-sm hover:bg-slate-50">
+                  <span className="w-[122px] shrink-0 tabular-nums">
+                    {fmt12(s.start)}–{fmt12(s.end)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">
+                    <span style={{ color: sectionColor(s.section) }}>{s.section}</span> · {s.task}
+                  </span>
+                  <span className="hidden w-48 truncate text-xs text-slate-500 md:block">{who}</span>
+                </button>
+              )
+            })}
+        </div>
+      ))}
+    </section>
+  )
 }
 
 export default function RunSheet() {
@@ -136,6 +182,7 @@ export default function RunSheet() {
           )
         })}
       </div>
+      <OtherDays />
       {rows.some((r, i) => i > 0 && !r.source && !rows[i - 1].source && r.phase === rows[i - 1].phase && toMinutes(rows[i - 1].time) + rows[i - 1].duration > toMinutes(r.time) + 1) && (
         <p className="mt-3 text-xs text-amber-700">Some items overlap — that's fine for things happening in parallel.</p>
       )}

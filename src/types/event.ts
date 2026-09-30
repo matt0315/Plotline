@@ -226,9 +226,33 @@ export interface CrewMember {
   role: string
   phone: string
   email: string
-  callTime: string
-  finishTime: string
+  /** Hourly rate, USD. Hours come from the shifts they're rostered on. */
   rate: number
+  notes: string
+  /** Legacy single call time — converted into a shift on load. */
+  callTime?: string
+  finishTime?: string
+}
+
+/**
+ * One block of work on the roster: a section (bump in, table setup…), on a day relative to
+ * the event, done either by our own crew or by a supplier's team.
+ */
+export interface Shift {
+  id: ID
+  section: string
+  task: string
+  /** Days relative to the event: -3 = three days before, 0 = event day, 1 = the day after. */
+  day: number
+  start: string // HH:MM
+  end: string // HH:MM — may pass midnight
+  /** Our own people on this shift. */
+  crewIds: ID[]
+  /** Set when a supplier's team does this work (e.g. the marquee company's build crew). */
+  supplierId?: ID
+  /** Positions to fill — "2 of 4 filled". */
+  needed: number
+  location: string
   notes: string
 }
 
@@ -258,6 +282,7 @@ export interface EventDoc {
   suppliers: Supplier[]
   docs: DocForm[]
   crew: CrewMember[]
+  shifts: Shift[]
   budget: BudgetLine[]
 
   meta: { created: string; updated: string; schemaVersion: number }

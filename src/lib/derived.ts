@@ -1,5 +1,6 @@
 import type { BudgetLine, EventDoc, Guest, Phase } from '../types/event'
-import { hoursBetween, toMinutes } from './time'
+import { toMinutes } from './time'
+import { crewCost, doubleBookings, openPositions } from './roster'
 import { KIND_LABEL } from '../data/furniture'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
 import { clearanceIssues, isSeating } from './geometry'
@@ -7,7 +8,7 @@ import { stageKit } from './staging'
 
 /* ---------- Budget ---------- */
 
-export const crewCost = (d: EventDoc) => d.crew.reduce((s, c) => s + hoursBetween(c.callTime, c.finishTime) * (c.rate || 0), 0)
+export { crewCost } from './roster'
 
 /** A line linked to a supplier or crew reads its numbers live from there. */
 export const lineActual = (l: BudgetLine, d: EventDoc): number => {
@@ -106,9 +107,14 @@ export const runSheet = (d: EventDoc): RunRow[] => {
     if (s.departure)
       rows.push({ id: `sd-${s.id}`, time: s.departure, duration: 0, title: `${who} departs`, owner: s.contact, location: '', notes: '', phase: phaseFor(d, s.departure), source: { kind: 'supplier', id: s.id } })
   }
-  for (const c of d.crew) {
-    if (c.callTime)
-      rows.push({ id: `cc-${c.id}`, time: c.callTime, duration: 0, title: `Crew call — ${c.name || c.role}`, owner: c.role, location: '', notes: c.phone, phase: phaseFor(d, c.callTime), source: { kind: 'crew', id: c.id } })
+  // Event-day roster shifts appear on the run sheet; other days are listed separately.
+  const names = new Map(d.crew.map((c) => [c.id, c.name || c.role]))
+  for (const sh of d.shifts) {
+    if (sh.day !== 0) continue
+    const sup = sh.supplierId ? d.suppliers.find((s) => s.id === sh.supplierId) : undefined
+    const who = sup ? sup.name || sup.category : sh.crewIds.map((id) => names.get(id)).filter(Boolean).join(', ') || 'Unassigned'
+    const gap = !sup && sh.crewIds.length < sh.needed ? ` · ${sh.needed - sh.crewIds.length} to fill` : ''
+    rows.push({ id: `sh-${sh.id}`, time: sh.start, duration: 0, title: `${sh.section}: ${sh.task || 'crew'}`, owner: who, location: sh.location, notes: `until ${sh.end}${gap}`, phase: phaseFor(d, sh.start), source: { kind: 'crew', id: sh.id } })
   }
   const order: Record<Phase, number> = { setup: 0, event: 1, breakdown: 2 }
   return rows.sort((a, b) => order[a.phase] - order[b.phase] || relMinutes(d, a.time) - relMinutes(d, b.time))
@@ -159,6 +165,10 @@ export const nextSteps = (d: EventDoc): { text: string; tab: Tab }[] => {
   if (pending) out.push({ text: `${pending} RSVP${pending === 1 ? '' : 's'} outstanding`, tab: 'guests' })
   if (!d.docs.some((f) => /risk/i.test(f.title)) && d.guestCount >= 100)
     out.push({ text: 'No risk assessment yet — recommended for 100+ guests', tab: 'docs' })
-  if (!d.crew.length) out.push({ text: 'Add your crew and their call times', tab: 'crew' })
+  if (!d.shifts.length) out.push({ text: 'Build your crew roster — set-up, service and pack-down', tab: 'crew' })
+  const unfilled = openPositions(d)
+  if (unfilled) out.push({ text: `${unfilled} rostered position${unfilled === 1 ? '' : 's'} still to fill`, tab: 'crew' })
+  const clashes = doubleBookings(d)
+  if (clashes.length) out.push({ text: `${clashes.length} crew double-booking${clashes.length === 1 ? '' : 's'} on the roster`, tab: 'crew' })
   return out
 }

@@ -1,4 +1,4 @@
-import type { BudgetLine, EventDoc, EventType, LayoutItem, SiteItem, Space, Supplier, Venue, Zone } from '../types/event'
+import type { BudgetLine, CrewMember, EventDoc, EventType, LayoutItem, SiteItem, Space, Supplier, Venue, Zone } from '../types/event'
 import { SCHEMA_VERSION } from '../types/event'
 import { uid } from '../lib/id'
 import { addMinutes } from '../lib/time'
@@ -6,6 +6,7 @@ import { FURNITURE_BY_KEY } from '../data/furniture'
 import { SITE_ASSETS } from '../data/siteAssets'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { DOC_TEMPLATES, fieldsFrom } from '../data/docTemplates'
+import { suggestedRoster } from '../lib/roster'
 import { chairBlockSize, offsetLatLng, rectLatLngs } from '../lib/geometry'
 
 export interface GenerateInput {
@@ -207,10 +208,26 @@ export const blankEvent = (over: Partial<EventDoc> = {}): EventDoc => {
     suppliers: [],
     docs: [],
     crew: [],
+    shifts: [],
     budget: [],
     meta: { created: now, updated: now, schemaVersion: SCHEMA_VERSION },
     ...over,
   }
+}
+
+/** Template crew roles become people, each placed on the shift that fits their role. */
+const rosterWithCrew = (type: EventType, start: string, suppliers: Supplier[], roles: string[]) => {
+  const shifts = suggestedRoster(type, start, suppliers)
+  const crew: CrewMember[] = roles.map((role) => ({ id: uid('c'), name: '', role, phone: '', email: '', rate: 0, notes: '' }))
+  const sectionFor = (role: string) =>
+    /registration/i.test(role) ? 'Registration' : /stage|production/i.test(role) ? 'Equipment setup' : /safety|steward|security/i.test(role) ? 'Security' : 'Event management'
+  for (const c of crew) {
+    const target = shifts.find((s) => !s.supplierId && s.section === sectionFor(c.role)) ?? shifts.find((s) => !s.supplierId && s.section === 'Event management')
+    if (!target) continue
+    target.crewIds.push(c.id)
+    target.needed = Math.max(target.needed, target.crewIds.length)
+  }
+  return { crew, shifts }
 }
 
 export const generateEvent = (input: GenerateInput): EventDoc => {
@@ -291,16 +308,6 @@ export const generateEvent = (input: GenerateInput): EventDoc => {
       const tpl = DOC_TEMPLATES.find((d) => d.key === key)!
       return { id: uid('d'), title: tpl.title, description: tpl.description, fields: fieldsFrom(tpl), responses: [] }
     }),
-    crew: t.crew.map(([role, call, fin]) => ({
-      id: uid('c'),
-      name: '',
-      role,
-      phone: '',
-      email: '',
-      callTime: addMinutes(start, call),
-      finishTime: addMinutes(start, fin),
-      rate: 0,
-      notes: '',
-    })),
+    ...rosterWithCrew(input.type, start, suppliers, t.crew.map(([role]) => role)),
   })
 }

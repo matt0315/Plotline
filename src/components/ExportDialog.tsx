@@ -15,7 +15,7 @@ export default function ExportDialog() {
   const isPro = useAccount((s) => s.isPro)
   const close = () => useUI.getState().set({ exportOpen: false })
   const available = (s: Section) =>
-    s === 'site' ? d.site.items.length + d.site.zones.length > 0 : s === 'seating' || s === 'placecards' ? d.guests.some((g) => g.seat) : s === 'guests' ? d.guests.length > 0 : s === 'crew' ? d.crew.length > 0 : s === 'suppliers' ? d.suppliers.length > 0 : s === 'budget' ? d.budget.length > 0 : true
+    s === 'site' ? d.site.items.length + d.site.zones.length > 0 : s === 'seating' || s === 'placecards' ? d.guests.some((g) => g.seat) : s === 'guests' ? d.guests.length > 0 : s === 'crew' ? d.shifts.length > 0 || d.crew.length > 0 : s === 'suppliers' ? d.suppliers.length > 0 : s === 'budget' ? d.budget.length > 0 : true
   const [picked, setPicked] = useState<Set<Section>>(new Set(ORDER.filter((s) => available(s) && s !== 'placecards' && s !== 'guests')))
   const [busy, setBusy] = useState(false)
 

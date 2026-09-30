@@ -10,7 +10,8 @@ import { useAccount } from '../store/account'
 import { budgetTotals, crewCost, lineActual, linePaid, loadList, runSheet, seatingStats } from './derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { money } from './money'
-import { fmt12, hoursBetween } from './time'
+import { fmt12 } from './time'
+import { crewHours, dayTitle, sortShifts } from './roster'
 import { isSeating } from './geometry'
 import { BRAND } from './brand'
 import { slug } from './share'
@@ -26,7 +27,7 @@ export const SECTION_LABELS: Record<Section, string> = {
   guests: 'Guest list',
   run: 'Run sheet',
   suppliers: 'Suppliers',
-  crew: 'Crew call sheet',
+  crew: 'Crew roster',
   budget: 'Budget',
   load: 'Load list',
 }
@@ -169,7 +170,7 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
         ['Guests', `${d.guestCount} expected · ${d.guests.length} invited · ${d.guests.filter((g) => g.rsvp === 'yes').length} attending`],
         ['Seating', `${st.capacity} seats · ${st.seated} guests seated`],
         ['Suppliers', `${d.suppliers.filter((s) => s.status === 'booked' || s.status === 'paid').length} booked of ${d.suppliers.filter((s) => s.status !== 'declined').length}`],
-        ['Crew', `${d.crew.length} people`],
+        ['Crew', `${d.crew.length} people · ${d.shifts.length} rostered shifts`],
         ['Budget', `${money(b.forecast)} forecast${b.target ? ` vs ${money(b.target)} target` : ''} · ${money(b.paid)} paid`],
       ],
       { showHead: false, columnStyles: { 0: { fontStyle: 'bold', cellWidth: 110 } } },
@@ -298,14 +299,38 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
 
   if (has('crew')) {
     newPage(p, first, 'portrait')
-    const y = heading(p, 'Crew call sheet', `${d.crew.length} crew · ${d.venue.name || ''}`)
-    table(
-      p,
-      y,
-      ['Name', 'Role', 'Mobile', 'Call', 'Finish', 'Hours'],
-      [...d.crew].sort((a, b) => a.callTime.localeCompare(b.callTime)).map((c) => [c.name, c.role, c.phone, fmt12(c.callTime), c.finishTime ? fmt12(c.finishTime) : '', hoursBetween(c.callTime, c.finishTime).toFixed(1)]),
-    )
-    if (crewCost(d)) p.setFontSize(9).setTextColor(...MUTED).text(`Crew cost: ${money(crewCost(d))}`, M, p.lastAutoTable!.finalY + 16)
+    const shifts = sortShifts(d.shifts)
+    const days = [...new Set(shifts.map((s) => s.day))]
+    let y = heading(p, 'Crew roster', `${d.crew.length} people · ${shifts.length} shifts across ${days.length} day${days.length === 1 ? '' : 's'}${d.venue.name ? ' · ' + d.venue.name : ''}`)
+    const who = (s: (typeof shifts)[number]) => {
+      const sup = s.supplierId ? d.suppliers.find((x) => x.id === s.supplierId) : undefined
+      if (sup) return `${sup.name || sup.category} (${s.needed} crew)`
+      const names = s.crewIds.map((id) => d.crew.find((c) => c.id === id)).map((c) => c?.name || c?.role || '?')
+      const gap = s.needed - names.length
+      return [names.join(', '), gap > 0 ? `${gap} to fill` : ''].filter(Boolean).join(' · ')
+    }
+    for (const day of days) {
+      if (y > H(p) - 120) (p.addPage('letter', 'portrait'), (y = M))
+      p.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK).text(dayTitle(d.date, day), M, y + 4)
+      y = table(
+        p,
+        y + 10,
+        ['Time', 'Section', 'Task', 'Who', 'Where'],
+        shifts.filter((s) => s.day === day).map((s) => [`${fmt12(s.start)}–${fmt12(s.end)}`, s.section, s.task, who(s), s.location]),
+        { columnStyles: { 0: { cellWidth: 92 }, 1: { cellWidth: 90 } } },
+      )
+    }
+    if (d.crew.length) {
+      if (y > H(p) - 140) (p.addPage('letter', 'portrait'), (y = M))
+      p.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK).text('People', M, y + 4)
+      y = table(
+        p,
+        y + 10,
+        ['Name', 'Role', 'Mobile', 'Shifts', 'Hours'],
+        d.crew.map((c) => [c.name, c.role, c.phone, d.shifts.filter((s) => s.crewIds.includes(c.id)).length, crewHours(d, c.id).toFixed(1)]),
+      )
+    }
+    if (crewCost(d)) p.setFontSize(9).setTextColor(...MUTED).text(`Team cost: ${money(crewCost(d))}`, M, y - 4)
   }
 
   if (has('budget')) {

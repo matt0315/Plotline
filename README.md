@@ -26,7 +26,11 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 - **Suppliers.** Group by category and compare quotes side by side against the budget. Choosing one books it and declines the others.
 - **Budget.** Shows target, forecast, committed, paid and due, with a category breakdown.
 - **Docs.** A form builder with 7 safety and ops templates. Forms support photo capture and on-screen signatures. You can get a crew QR link (no login needed), a CSV of responses, and PDFs.
-- **Crew.** Roster with call and finish times, hours, rates and a call sheet.
+- **Crew roster.** Plan who does what and when, before, during and after the event: site prep and lawn mowing days out, marquee builds, bump in, table and equipment setup, lighting, service, bar, security, pack down, bump out and cleaners.
+  - Each shift has a section, task, day, times and location, and is covered by either your own team (with "2 of 4 filled" tracking) or a supplier's team.
+  - Suggested rosters come with every event type. Unfilled positions and double-booked people are flagged.
+  - Event-day shifts appear on the run sheet, other days get their own section, and suppliers show the shifts they're rostered on.
+  - Your team's hours × rates go into the budget, and the roster PDF lists every day.
 - **Export event pack.** One PDF with the cover, floor plan (vector), site map, seating chart, place cards, guest list, run sheet, suppliers, crew, budget and load list.
 - **Feedback button.** It's in the top bar on every screen, so anyone (no account needed) can say what they need. Submissions are saved to D1 with which screen they were on and their event type, never their event data. Read them with `npm run feedback`.
 - **Also:** ⌘K command palette, undo/redo (drags count as one step), autosave, works on phones.

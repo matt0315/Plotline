@@ -6,6 +6,7 @@ import { budgetTotals, loadList, nextSteps, runSheet, seatingStats } from '../li
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { money } from '../lib/money'
 import { daysUntil, fmt12 } from '../lib/time'
+import { openPositions, relLabel } from '../lib/roster'
 import { StaticPlan } from './Layout/render'
 import { VenueSearch } from '../components/VenueSearch'
 import { Stat, Select } from '../components/ui'
@@ -200,15 +201,23 @@ export const Overview = () => {
           </ul>
         </Card>
 
-        <Card title="Crew & docs" icon={<HardHat size={16} />} onOpen={() => go('crew')}>
+        <Card title="Crew roster & docs" icon={<HardHat size={16} />} onOpen={() => go('crew')}>
           <div className="grid grid-cols-2 gap-2">
-            <Stat label="Crew" value={d.crew.length} sub={d.crew[0] ? `First call ${fmt12(d.crew.map((c) => c.callTime).sort()[0])}` : undefined} />
+            <Stat
+              label="Crew"
+              value={d.crew.length}
+              sub={
+                d.shifts.length
+                  ? `${d.shifts.length} shifts${openPositions(d) ? ` · ${openPositions(d)} to fill` : ''}${Math.min(...d.shifts.map((s) => s.day)) < 0 ? ` · from ${relLabel(Math.min(...d.shifts.map((s) => s.day))).toLowerCase()}` : ''}`
+                  : 'No roster yet'
+              }
+            />
             <button onClick={() => go('docs')} className="text-left">
               <Stat label="Forms" value={d.docs.length} sub={`${d.docs.reduce((s, f) => s + f.responses.length, 0)} responses`} />
             </button>
           </div>
           <div className="mt-3 flex items-center gap-1 text-xs text-slate-400">
-            <FileCheck2 size={12} /> Risk assessments, sign-ins, delivery notes
+            <FileCheck2 size={12} /> Set-up to pack-down, plus safety forms
           </div>
         </Card>
 

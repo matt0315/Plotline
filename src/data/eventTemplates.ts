@@ -15,7 +15,8 @@ export interface EventTemplate {
   /** [category, placeholder name, arrival offset from start in minutes, departure offset] */
   suppliers: [string, string, number, number][]
   docs: string[]
-  crew: [string, number, number][] // role, call offset, finish offset
+  /** People to add, by role; the generator places each on a matching roster shift. Offsets are legacy. */
+  crew: [string, number, number][]
 }
 
 const round = (n: number, to = 50) => Math.round(n / to) * to

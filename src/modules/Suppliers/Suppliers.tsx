@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, Phone, Mail } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, Phone, Mail, HardHat } from 'lucide-react'
 import type { Supplier, SupplierStatus } from '../../types/event'
 import { useEvent, update } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { money } from '../../lib/money'
+import { dayTitle, newShift, sortShifts } from '../../lib/roster'
+import { addMinutes, fmt12 } from '../../lib/time'
+import { sectionColor } from '../../data/roster'
 import { choose, linkToBudget, newSupplier, SUPPLIER_CATEGORIES } from './supplierActions'
 import { Button, Cell, Empty, IconButton, Modal, NumberCell, PageHeader, Select, focusSoon } from '../../components/ui'
 
@@ -28,6 +31,48 @@ const edit = (id: string, fn: (s: Supplier) => void, key: string) =>
     const s = d.suppliers.find((x) => x.id === id)
     if (s) fn(s)
   }, `sup-${key}-${id}`)
+
+/** The shifts this supplier's team is rostered on, with a shortcut to add one. */
+const SupplierRoster = ({ supplierId }: { supplierId: string }) => {
+  const d = useEvent((x) => x.doc)!
+  const shifts = sortShifts(d.shifts.filter((sh) => sh.supplierId === supplierId))
+  const rosterTeam = () => {
+    const sh = newShift({ supplierId, section: 'Bump in', day: 0, start: d.startTime, end: addMinutes(d.startTime, 240), needed: 2 })
+    update((x) => void x.shifts.push(sh))
+    useUI.getState().go('crew', sh.id)
+  }
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:col-span-2 lg:col-span-4">
+      <div className="mb-1 flex items-center gap-2">
+        <HardHat size={13} className="text-slate-400" />
+        <span className="font-medium text-slate-600">On the crew roster</span>
+        <div className="flex-1" />
+        <button onClick={rosterTeam} className="rounded-md px-2 py-0.5 text-brand-600 hover:bg-brand-50">
+          + Roster their team
+        </button>
+      </div>
+      {shifts.length ? (
+        <ul className="space-y-0.5">
+          {shifts.map((sh) => (
+            <li key={sh.id}>
+              <button onClick={() => useUI.getState().go('crew', sh.id)} className="flex w-full gap-2 rounded px-1 py-0.5 text-left hover:bg-slate-50">
+                <span className="w-40 shrink-0 text-slate-500">{dayTitle(d.date, sh.day)}</span>
+                <span className="w-28 shrink-0 tabular-nums">
+                  {fmt12(sh.start)}–{fmt12(sh.end)}
+                </span>
+                <span className="truncate">
+                  <span style={{ color: sectionColor(sh.section) }}>{sh.section}</span> · {sh.task} · {sh.needed} crew
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-slate-400">Not rostered yet — add their bump-in, service or pack-down so it shows on the roster and run sheet.</p>
+      )}
+    </div>
+  )
+}
 
 const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () => void }) => {
   const d = useEvent((x) => x.doc)!
@@ -110,12 +155,15 @@ const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () =
                 update((d) => {
                   d.suppliers = d.suppliers.filter((x) => x.id !== s.id)
                   for (const b of d.budget) if (b.supplierId === s.id) delete b.supplierId
+                  // Their rostered shifts stay, handed back to your own team to fill.
+                  for (const sh of d.shifts) if (sh.supplierId === s.id) delete sh.supplierId
                 })
               }
             >
               <Trash2 size={14} /> Remove
             </Button>
           </div>
+          <SupplierRoster supplierId={s.id} />
           <label className="text-xs text-slate-500 sm:col-span-2 lg:col-span-4">
             Notes
             <textarea className="input mt-1 h-16" value={s.notes} onChange={(e) => edit(s.id, (x) => void (x.notes = e.target.value), 'notes')} />
