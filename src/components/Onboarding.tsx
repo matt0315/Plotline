@@ -59,6 +59,11 @@ export const Onboarding = () => {
             <span className="font-semibold">{BRAND}</span>
             <div className="flex-1" />
             <FeedbackButton />
+            {hasEvents && (
+              <Button size="sm" className="whitespace-nowrap" onClick={() => useUI.getState().setScreen('home')}>
+                My events
+              </Button>
+            )}
           </div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Your whole event, planned in 30 seconds.</h1>
           <p className="mt-2 text-slate-600">Four answers. We draft the floor plan, run sheet, budget and supplier list — you edit from there. No signup.</p>

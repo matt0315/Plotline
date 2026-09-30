@@ -87,8 +87,10 @@ const TopBar = () => {
 
   return (
     <header className="no-print flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-3">
-      <button onClick={() => useUI.getState().setScreen('home')} className="flex min-w-[80px] shrink items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-slate-100" title="All events">
-        <img src="/favicon.svg" alt={BRAND} className="h-7 w-7 shrink-0" />
+      <button onClick={() => useUI.getState().setScreen('onboarding')} className="shrink-0 rounded-lg p-0.5 hover:bg-slate-100" title={`${BRAND} home`}>
+        <img src="/favicon.svg" alt={`${BRAND} home`} className="h-7 w-7" />
+      </button>
+      <button onClick={() => useUI.getState().setScreen('home')} className="flex min-w-[60px] shrink items-center gap-1.5 rounded-lg px-1.5 py-1 hover:bg-slate-100" title="All events">
         <span className="min-w-0 truncate text-sm font-semibold">{doc.name}</span>
         <ChevronDown size={14} className="shrink-0 text-slate-400" />
       </button>

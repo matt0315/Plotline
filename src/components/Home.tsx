@@ -26,8 +26,10 @@ export const Home = () => {
   return (
     <div className="min-h-full">
       <header className="flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-4">
-        <img src="/favicon.svg" className="h-7 w-7" alt="" />
-        <span className="font-semibold">{BRAND}</span>
+        <button onClick={() => useUI.getState().setScreen('onboarding')} className="flex items-center gap-2 rounded-lg px-1 py-0.5 hover:bg-slate-100" title={`${BRAND} home`}>
+          <img src="/favicon.svg" className="h-7 w-7" alt="" />
+          <span className="font-semibold">{BRAND}</span>
+        </button>
         <div className="flex-1" />
         <FeedbackButton />
         <AccountMenu />
