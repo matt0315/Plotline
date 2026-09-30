@@ -37,9 +37,12 @@
     "APP_ENV": "production",
     "APP_URL": "https://www.plotlineapp.online",
     "EMAIL_FROM": "hello@plotlineapp.online",
-    "APP_NAME": "Plotline"
+    "APP_NAME": "Plotline",
+    // $39/mo Plotline Pro. Public link, so not a secret. Customers are tagged with their account id.
+    "STRIPE_PAYMENT_LINK": "https://buy.stripe.com/3cIcN7c159KT1rugkv6g800"
   },
 
   "observability": { "enabled": true }
-  // Secrets (npx wrangler secret put …): STRIPE_SECRET_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET, CLOUDCONVERT_API_KEY
+  // Secrets (npx wrangler secret put …): STRIPE_WEBHOOK_SECRET (required for billing), CLOUDCONVERT_API_KEY (optional).
+  // Optional: STRIPE_PORTAL_LINK var for "Manage billing"; or STRIPE_SECRET_KEY + STRIPE_PRICE_ID to use the Checkout API instead of the link.
 }

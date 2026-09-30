@@ -5,6 +5,10 @@ export interface Secrets {
   STRIPE_WEBHOOK_SECRET?: string
   CLOUDCONVERT_API_KEY?: string
   APP_URL?: string
+  /** Stripe Payment Link for the $39/mo plan (no secret key needed). */
+  STRIPE_PAYMENT_LINK?: string
+  /** Stripe no-code customer portal login link, for "Manage billing". */
+  STRIPE_PORTAL_LINK?: string
   /** Where feedback notifications go (optional; needs Email Sending set up). */
   FEEDBACK_TO?: string
 }

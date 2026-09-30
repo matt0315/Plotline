@@ -98,13 +98,14 @@ npm run dev
 
 3. **Satellite imagery.** Create an API key in the ArcGIS Location Platform developer dashboard, scoped to basemaps. Set `VITE_ARCGIS_KEY` in `.env.local` or your build environment. **Don't launch without a key:** the dev fallback uses Esri's public endpoint, which isn't licensed for commercial use. MapTiler and Mapbox keys also work (see `.env.example`).
 
-4. **Stripe**
-   - Create a product "Plotline Pro" with a **recurring $39.00 USD monthly** price.
-   - Run `npx wrangler secret put STRIPE_SECRET_KEY` and `npx wrangler secret put STRIPE_PRICE_ID`.
-   - Add a webhook endpoint at `https://<your-domain>/api/stripe-webhook` for `checkout.session.completed` and `customer.subscription.created`, `.updated`, `.deleted`, `.paused` and `.resumed`. Then run `npx wrangler secret put STRIPE_WEBHOOK_SECRET`.
-   - Turn on the Customer Portal and allow cancellation.
+4. **Stripe (Payment Link, no secret key needed)**
+   - The $39/mo **Payment Link** is set as `STRIPE_PAYMENT_LINK` in `wrangler.jsonc`. "Upgrade" sends signed-in users there, tagged with their account ID (`client_reference_id`) and email.
+   - **Link settings → After payment:** redirect to `https://www.plotlineapp.online/?checkout=success`.
+   - **Webhook:** Developers → Webhooks → add an endpoint at `https://www.plotlineapp.online/api/stripe-webhook` for `checkout.session.completed` and `customer.subscription.created`, `.updated`, `.deleted`, `.paused` and `.resumed`. Then run `npx wrangler secret put STRIPE_WEBHOOK_SECRET` and paste the signing secret. The Worker verifies Stripe's signature itself.
+   - **Manage billing:** Settings → Billing → Customer portal → enable the portal login link, and set it as `STRIPE_PORTAL_LINK` in `wrangler.jsonc`.
+   - **Public details:** check the business name customers see at checkout (Settings → Business → Public details).
 
-   The webhook is the only thing that grants Pro.
+   The webhook is the only thing that grants Pro. A card failure (`past_due`) or a cancellation switches it off. Prefer the API? Set the `STRIPE_SECRET_KEY` and `STRIPE_PRICE_ID` secrets and remove `STRIPE_PAYMENT_LINK`; Checkout Sessions take over.
 
 5. **Feedback alerts (optional).** Feedback is always saved to D1; run `npm run feedback` to read the latest 50. To also get each one by email, set a `FEEDBACK_TO` variable (for example `npx wrangler secret put FEEDBACK_TO`). This needs Email Sending set up (step 2). Replies go straight to the sender when they left an email.
 
