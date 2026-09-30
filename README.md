@@ -116,11 +116,12 @@ npm run dev
    npm run deploy
    ```
 
-8. **Custom domain (www.plotlineapp.online).** The domain's DNS must be on Cloudflare: add the domain in the dashboard (Free plan), then set the two Cloudflare nameservers at the registrar (VentraIP). Once it shows as Active:
-   - In `wrangler.jsonc`, uncomment `routes`, `workers_dev`, `preview_urls` and `APP_URL`, then run `npm run deploy`.
-   - Run `npm run deploy:apex`. This deploys a tiny Worker that redirects `plotlineapp.online` to `www`, so there's one canonical address, one session cookie and one set of saved events.
-   - Run `npx wrangler email sending enable plotlineapp.online` so sign-in emails come from `hello@plotlineapp.online`.
-   - The registration itself can move from VentraIP to Cloudflare Registrar after the 60-day new-domain lock (from about 29 November 2026). It's optional, since DNS is what matters.
+8. **Custom domain: live at https://www.plotlineapp.online.** DNS is on Cloudflare; the registration is still with VentraIP.
+   - `wrangler.jsonc` serves the app on `www.plotlineapp.online`, with `workers_dev` switched off.
+   - `npm run deploy:apex` deploys a tiny Worker that 301-redirects `plotlineapp.online` to `www`, keeping the path. That gives one canonical address, one session cookie and one set of saved events.
+   - Email Sending is enabled for the domain; its SPF, DKIM, bounce and DMARC records are in place. Sign-in emails come from `hello@plotlineapp.online`, which needs the Workers Paid plan to email any address.
+   - In the dashboard, turn on **SSL/TLS → Edge Certificates → Always Use HTTPS**. Session cookies are HTTPS-only.
+   - Optional: move the registration to Cloudflare Registrar once the 60-day new-domain lock ends (about 29 November 2026).
 
 ## Deliberately not built (yet)
 
