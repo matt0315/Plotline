@@ -25,7 +25,8 @@ export const json = (body: unknown, status = 200, headers: HeadersInit = {}) =>
 
 export const isDev = (env: AppEnv) => env.APP_ENV === 'development'
 
-export const origin = (req: Request, env: AppEnv) => env.APP_URL || new URL(req.url).origin
+/** Where links in emails and Stripe redirects point. Local dev always uses the address it's running on. */
+export const origin = (req: Request, env: AppEnv) => (isDev(env) ? new URL(req.url).origin : env.APP_URL || new URL(req.url).origin)
 
 /* ---------- Tokens ---------- */
 

@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Redirects the bare domain to www. Deploy with: npx wrangler deploy -c wrangler.apex.jsonc
+  "name": "plotline-apex-redirect",
+  "main": "apex/index.ts",
+  "compatibility_date": "2026-09-20",
+  "workers_dev": false,
+  "routes": [{ "pattern": "plotlineapp.online", "custom_domain": true }]
+}

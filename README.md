@@ -116,7 +116,11 @@ npm run dev
    npm run deploy
    ```
 
-   Then attach your domain under Workers → plotline → Domains & Routes.
+8. **Custom domain (www.plotlineapp.online).** The domain's DNS must be on Cloudflare: add the domain in the dashboard (Free plan), then set the two Cloudflare nameservers at the registrar (VentraIP). Once it shows as Active:
+   - In `wrangler.jsonc`, uncomment `routes`, `workers_dev`, `preview_urls` and `APP_URL`, then run `npm run deploy`.
+   - Run `npm run deploy:apex`. This deploys a tiny Worker that redirects `plotlineapp.online` to `www`, so there's one canonical address, one session cookie and one set of saved events.
+   - Run `npx wrangler email sending enable plotlineapp.online` so sign-in emails come from `hello@plotlineapp.online`.
+   - The registration itself can move from VentraIP to Cloudflare Registrar after the 60-day new-domain lock (from about 29 November 2026). It's optional, since DNS is what matters.
 
 ## Deliberately not built (yet)
 

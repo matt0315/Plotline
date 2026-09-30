@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.worker.json",
+  "compilerOptions": { "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.apex.tsbuildinfo" },
+  "include": ["apex"]
+}
