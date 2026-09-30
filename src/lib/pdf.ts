@@ -125,6 +125,18 @@ const drawPlan = async (p: jsPDF, d: EventDoc, x: number, y: number, w: number, 
   p.setFontSize(8).setTextColor(...MUTED).text(`Scale approx. 1 cm = ${((metres * 72) / 2.54).toFixed(2)} m`, x, y + h + 12)
 }
 
+/** Free-tier watermark on the current page, sized to the page. */
+export const watermarkPage = (p: jsPDF) => {
+  const k = Math.min(W(p), H(p)) / 612
+  p.setFont('helvetica', 'normal').setFontSize(8 * k).setTextColor(180, 180, 200)
+  p.text(`Made with ${BRAND} Free — upgrade to remove this watermark`, W(p) / 2, H(p) - 22 * k, { align: 'center' })
+  p.saveGraphicsState()
+  p.setGState(new (p as unknown as { GState: new (o: object) => unknown }).GState({ opacity: 0.08 }) as never)
+  p.setFont('helvetica', 'bold').setFontSize(64 * k).setTextColor(79, 70, 229)
+  p.text(BRAND, W(p) / 2, H(p) / 2, { align: 'center', angle: 30 })
+  p.restoreGraphicsState()
+}
+
 const stamp = (p: jsPDF, d: EventDoc, watermark: boolean) => {
   const n = p.getNumberOfPages()
   for (let i = 1; i <= n; i++) {
@@ -132,15 +144,7 @@ const stamp = (p: jsPDF, d: EventDoc, watermark: boolean) => {
     p.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
     p.text(`${d.name}${d.date ? ' · ' + new Date(d.date + 'T00:00').toLocaleDateString('en-US', { dateStyle: 'medium' }) : ''}`, M, H(p) - 22)
     p.text(`${i} / ${n}`, W(p) - M, H(p) - 22, { align: 'right' })
-    if (watermark) {
-      p.setTextColor(180, 180, 200)
-      p.text(`Made with ${BRAND} Free — upgrade to remove this watermark`, W(p) / 2, H(p) - 22, { align: 'center' })
-      p.saveGraphicsState()
-      p.setGState(new (p as unknown as { GState: new (o: object) => unknown }).GState({ opacity: 0.08 }) as never)
-      p.setFont('helvetica', 'bold').setFontSize(64).setTextColor(79, 70, 229)
-      p.text(BRAND, W(p) / 2, H(p) / 2, { align: 'center', angle: 30 })
-      p.restoreGraphicsState()
-    }
+    if (watermark) watermarkPage(p)
   }
 }
 

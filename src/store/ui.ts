@@ -18,6 +18,7 @@ interface UIState {
   palette: boolean
   guestPanel: boolean
   exportOpen: boolean
+  tablePlanOpen: boolean
   shareOpen: boolean
   feedbackOpen: boolean
   /** An id to scroll to / highlight after a jump (e.g. run sheet row → supplier). */
@@ -35,6 +36,7 @@ export const useUI = create<UIState>((set) => ({
   palette: false,
   guestPanel: false,
   exportOpen: false,
+  tablePlanOpen: false,
   shareOpen: false,
   feedbackOpen: false,
   focusId: null,

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wand2, Search, Users } from 'lucide-react'
+import { Wand2, Search, Users, FileDown } from 'lucide-react'
 import { useEvent } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { seatingStats } from '../../lib/derived'
@@ -38,9 +38,16 @@ export const GuestDock = () => {
           <span className="text-sm font-semibold">
             {st.seated} / {st.attending} seated
           </span>
-          <button onClick={() => setAll(!all)} className="text-xs text-brand-600">
-            {all ? 'Show unseated' : 'Show all'}
-          </button>
+          <div className="flex items-center gap-3">
+            {st.seated > 0 && (
+              <button onClick={() => useUI.getState().set({ tablePlanOpen: true })} className="flex items-center gap-1 text-xs text-brand-600" title="Design and download a table plan">
+                <FileDown size={13} /> Table plan
+              </button>
+            )}
+            <button onClick={() => setAll(!all)} className="text-xs text-brand-600">
+              {all ? 'Show unseated' : 'Show all'}
+            </button>
+          </div>
         </div>
         {!readOnly && st.unseated > 0 && (
           <Button

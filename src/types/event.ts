@@ -264,6 +264,26 @@ export interface Venue {
   zoom: number
 }
 
+export type TablePlanLayout = 'alpha' | 'tables' | 'cards' | 'caterer'
+export type PaperSize = 'a4' | 'a3' | 'letter' | 'a2' | 'a1' | 'p18x24' | 'p24x36'
+
+/** How the guest-facing table plan export looks. Saved per event. */
+export interface TablePlanStyle {
+  layout: TablePlanLayout
+  style: string
+  headingFont: string
+  bodyFont: string
+  accent: string
+  paper: PaperSize
+  orientation: 'portrait' | 'landscape'
+  title: string
+  subtitle: string
+  note: string
+  dietary: boolean
+  sortBy: 'first' | 'last'
+  cardsPerPage: 1 | 2
+}
+
 export interface EventDoc {
   id: ID
   name: string
@@ -284,6 +304,7 @@ export interface EventDoc {
   crew: CrewMember[]
   shifts: Shift[]
   budget: BudgetLine[]
+  tablePlan?: TablePlanStyle
 
   meta: { created: string; updated: string; schemaVersion: number }
 }

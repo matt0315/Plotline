@@ -44,6 +44,7 @@ const Docs = lazy(() => import('../modules/Docs/Docs'))
 const Crew = lazy(() => import('../modules/Crew/Crew'))
 const ExportDialog = lazy(() => import('./ExportDialog'))
 const ShareDialog = lazy(() => import('./ShareDialog'))
+const TablePlanDialog = lazy(() => import('./TablePlanDialog'))
 
 export const TABS: { id: Tab; label: string; icon: ReactNode; short?: string }[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
@@ -216,6 +217,7 @@ export const Shell = () => {
   const tab = useUI((s) => s.tab)
   const exportOpen = useUI((s) => s.exportOpen)
   const shareOpen = useUI((s) => s.shareOpen)
+  const tablePlanOpen = useUI((s) => s.tablePlanOpen)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -269,6 +271,7 @@ export const Shell = () => {
       <Suspense>
         {exportOpen && <ExportDialog />}
         {shareOpen && <ShareDialog />}
+        {tablePlanOpen && <TablePlanDialog />}
       </Suspense>
     </div>
   )

@@ -22,6 +22,10 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 - **Venue library.** Plans are private by default. A venue can publish its plan so organisers can find it and plan on it.
 - **Site map.** Real satellite imagery. Assets are placed at true size. Draw zones to get area and perimeter, and measure distances.
 - **Guests.** Paste a list or import a CSV (columns are detected automatically). Track RSVPs, groups, dietary needs and plus-ones. Seat guests by dragging, or auto-seat by group.
+- **Table plan designer.** Print a guest-facing seating plan with a live preview:
+  - Layouts: "find your seat" A–Z board, by table, table cards (one or two per page), or a caterer sheet with dietary needs.
+  - Six font styles built from embedded Google Fonts (Playfair, Cormorant, Great Vibes and more), or pick the heading and name fonts and an accent colour yourself.
+  - Paper from A4/Letter up to A1 and 24 × 36″ posters. Names auto-size to fit one sheet.
 - **Run sheet.** Split into set-up, event and pack-down. Handles overnight builds. "Shift this and everything after" moves the rest of the day when things slip.
 - **Suppliers.** Group by category and compare quotes side by side against the budget. Choosing one books it and declines the others.
 - **Budget.** Shows target, forecast, committed, paid and due, with a category breakdown.

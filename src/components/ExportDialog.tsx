@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Loader2, FileJson, Crown } from 'lucide-react'
+import { Download, Loader2, FileJson, Crown, Armchair, ArrowRight } from 'lucide-react'
 import { useEvent } from '../store/event'
 import { useUI } from '../store/ui'
 import { useAccount } from '../store/account'
@@ -76,6 +76,16 @@ export default function ExportDialog() {
           )
         })}
       </div>
+      {available('seating') && (
+        <button onClick={() => useUI.getState().set({ exportOpen: false, tablePlanOpen: true })} className="mt-3 flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50">
+          <Armchair size={16} className="text-brand-600" />
+          <span className="flex-1">
+            <span className="font-medium">Styled table plan</span>
+            <span className="block text-xs text-slate-500">Find-your-seat board, table cards or caterer sheet, in your choice of font</span>
+          </span>
+          <ArrowRight size={14} className="text-slate-400" />
+        </button>
+      )}
       {!isPro && (
         <button onClick={startCheckout} className="mt-4 flex w-full items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-left text-xs text-brand-800">
           <Crown size={14} /> Free exports carry a small watermark. Upgrade to remove it.

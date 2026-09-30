@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Upload, ClipboardPaste, Trash2, UserPlus, Search, Users, Download, Wand2 } from 'lucide-react'
+import { Plus, Upload, ClipboardPaste, Trash2, UserPlus, Search, Users, Download, Wand2, Armchair } from 'lucide-react'
 import type { Guest, Rsvp } from '../../types/event'
 import { useEvent, update } from '../../store/event'
 import { useUI } from '../../store/ui'
@@ -93,6 +93,9 @@ export default function Guests() {
             <>
               <Button onClick={() => download(new Blob([toCsv(d.guests, tableName)], { type: 'text/csv' }), `${slug(d.name)}-guests.csv`)} disabled={!d.guests.length}>
                 <Download size={16} /> CSV
+              </Button>
+              <Button onClick={() => useUI.getState().set({ tablePlanOpen: true })} disabled={!st.seated}>
+                <Armchair size={16} /> Table plan
               </Button>
               <Button onClick={() => file.current?.click()}>
                 <Upload size={16} /> Import

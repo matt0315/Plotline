@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Search, MessageSquarePlus, Plus, Download, Share2, Home as HomeIcon, Sparkles, Undo2, Redo2, User, Store as StoreIcon } from 'lucide-react'
+import { Search, MessageSquarePlus, Plus, Download, Share2, Home as HomeIcon, Sparkles, Undo2, Redo2, User, Store as StoreIcon, Armchair } from 'lucide-react'
 import { useUI } from '../store/ui'
 import { useEvent, update } from '../store/event'
 import { canCreateEvent } from '../store/actions'
@@ -72,6 +72,7 @@ export const CommandPalette = () => {
         },
       },
       { id: 'export', label: 'Export event pack (PDF)', icon: <Download size={16} />, run: () => set({ exportOpen: true, palette: false }) },
+      { id: 'table-plan', label: 'Design table plan', hint: 'Seating PDF', icon: <Armchair size={16} />, run: () => set({ tablePlanOpen: true, palette: false }) },
       { id: 'share', label: 'Share', icon: <Share2 size={16} />, run: () => set({ shareOpen: true, palette: false }) },
       { id: 'undo', label: 'Undo', hint: '⌘Z', icon: <Undo2 size={16} />, run: () => (useEvent.getState().undo(), close()) },
       { id: 'redo', label: 'Redo', hint: '⇧⌘Z', icon: <Redo2 size={16} />, run: () => (useEvent.getState().redo(), close()) },
