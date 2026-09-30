@@ -10,6 +10,7 @@ import { Shell } from './components/Shell'
 import { Onboarding } from './components/Onboarding'
 import { Home } from './components/Home'
 import { UpgradeDialog, SignInDialog } from './components/Account'
+import { FeedbackDialog } from './components/Feedback'
 import { toast } from './components/ui'
 
 let booted = false
@@ -84,6 +85,7 @@ export default function App() {
       {screen === 'workspace' && hasDoc && <Shell />}
       <UpgradeDialog />
       <SignInDialog />
+      <FeedbackDialog />
     </>
   )
 }

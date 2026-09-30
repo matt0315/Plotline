@@ -182,7 +182,8 @@ export const polyGap = (A: Pt[], B: Pt[]): number => {
 
 export type Clash = { a: string; b: string; gap: number; kind: 'walkway' | 'exit' | 'overlap' }
 
-const FLOOR_KINDS = new Set(['wall', 'label', 'door', 'dancefloor', 'pillar'])
+// Things you stand or place furniture on — a table on a stage isn't a clash.
+const FLOOR_KINDS = new Set(['wall', 'label', 'door', 'dancefloor', 'pillar', 'stage'])
 
 /**
  * Walkway and exit checks. Furniture closer than an accessible walkway
@@ -203,10 +204,12 @@ export const clearanceIssues = (items: LayoutItem[]): Clash[] => {
       else if (gap < WALKWAY_MIN && isSeating(A) && isSeating(B)) out.push({ a: A.id, b: B.id, gap, kind: 'walkway' })
     }
   }
+  // Platforms don't clash with furniture, but they can still block a fire exit.
+  const blockers = [...solids, ...items.filter((i) => i.kind === 'stage')]
   for (const exit of items.filter((i) => i.kind === 'exit')) {
     const zone = corners({ ...exit, h: exit.h + EXIT_CLEAR * 2 })
-    for (const s of solids) {
-      if (polyGap(zone, polys.get(s.id)!) === 0) out.push({ a: exit.id, b: s.id, gap: 0, kind: 'exit' })
+    for (const s of blockers) {
+      if (polyGap(zone, polys.get(s.id) ?? footprint(s)) === 0) out.push({ a: exit.id, b: s.id, gap: 0, kind: 'exit' })
     }
   }
   return out

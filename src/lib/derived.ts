@@ -3,6 +3,7 @@ import { hoursBetween, toMinutes } from './time'
 import { KIND_LABEL } from '../data/furniture'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
 import { clearanceIssues, isSeating } from './geometry'
+import { stageKit } from './staging'
 
 /* ---------- Budget ---------- */
 
@@ -120,13 +121,21 @@ export const loadList = (d: EventDoc) => {
   const add = (k: string, n = 1) => counts.set(k, (counts.get(k) ?? 0) + n)
   for (const i of d.layout.items) {
     if (i.kind === 'label' || i.kind === 'wall' || i.kind === 'door' || i.kind === 'pillar' || i.kind === 'exit') continue
+    const kit = stageKit(i)
+    if (kit) {
+      add('Stage decks 2.44 × 1.22 m', kit.decks)
+      add(`Deck legs ${Math.round(kit.height * 1000)} mm`, kit.legs)
+      if (kit.treads) add('Stage stairs (sets)', kit.treads)
+      add('Stage skirting (m)', kit.skirting)
+      continue
+    }
     if (i.kind === 'round-table') add(`Round table ${Math.round(i.w * 39.37)}″`)
     else if (i.kind === 'banquet-table') add(`Banquet table ${(i.w * 3.28).toFixed(0)}ft`)
     else if (i.kind !== 'chair' && i.kind !== 'chair-block') add(KIND_LABEL[i.kind])
     if (isSeating(i)) add('Chairs', i.seats)
   }
   for (const s of d.site.items) add(`${SITE_KIND_LABEL[s.kind]} (site)`)
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])
+  return [...counts.entries()].map(([k, n]) => [k, +n.toFixed(1)] as [string, number]).sort((a, b) => b[1] - a[1])
 }
 
 /* ---------- What to do next ---------- */

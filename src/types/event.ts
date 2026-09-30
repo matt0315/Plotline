@@ -46,6 +46,17 @@ export interface LayoutItem {
   color?: string
   layer: Layer
   locked?: boolean
+  /** Stages built from 2.44 × 1.22 m decks: how many across and deep. Size follows from this. */
+  decks?: StageDecks
+  /** Platform height in metres (stages). */
+  height?: number
+}
+
+export interface StageDecks {
+  across: number
+  deep: number
+  /** Decks turned so their 1.22 m side runs across the front (e.g. catwalks). */
+  turned?: boolean
 }
 
 /** A room or marquee outline on the floor plan. */

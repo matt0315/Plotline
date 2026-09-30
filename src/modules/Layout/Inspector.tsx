@@ -12,6 +12,8 @@ import {
   AlignCenterHorizontal,
   AlignEndHorizontal,
   AlertTriangle,
+  RectangleHorizontal,
+  RectangleVertical,
   Plus,
   X,
   Ruler,
@@ -27,6 +29,7 @@ import { KIND_LABEL } from '../../data/furniture'
 import { clearanceIssues, isSeating, chairBlockSize, fmtFt, WALKWAY_MIN } from '../../lib/geometry'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
+import { STAGE_HEIGHTS, deckDims, isDeckStage, stageKit, stageSize } from '../../lib/staging'
 import { useLayoutView } from './viewStore'
 import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, rotateBy } from './layoutActions'
 import { seatGuest } from '../Guests/guestActions'
@@ -57,6 +60,84 @@ const edit = (id: string, fn: (i: LayoutItem) => void, key: string) =>
     const i = d.layout.items.find((x) => x.id === id)
     if (i) fn(i)
   }, `${key}-${id}`)
+
+/** Stages are sized in whole decks, so plans match the hire stock exactly. */
+const StageControls = ({ item }: { item: LayoutItem }) => {
+  const d = item.decks!
+  const kit = stageKit(item)!
+  const k = deckDims(d)
+  const setDecks = (next: typeof d) =>
+    edit(
+      item.id,
+      (i) => {
+        i.decks = next
+        Object.assign(i, stageSize(next))
+      },
+      'decks',
+    )
+  const Stepper = ({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) => (
+    <div>
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 flex items-center gap-1">
+        <IconButton onClick={() => onChange(Math.max(1, value - 1))} disabled={value <= 1}>
+          −
+        </IconButton>
+        <span className="w-6 text-center text-sm font-semibold tabular-nums">{value}</span>
+        <IconButton onClick={() => onChange(Math.min(30, value + 1))}>+</IconButton>
+      </div>
+    </div>
+  )
+  return (
+    <div className="space-y-2 rounded-lg bg-slate-50 p-2.5">
+      <div className="grid grid-cols-2 gap-2">
+        <Stepper label="Decks across" value={d.across} onChange={(n) => setDecks({ ...d, across: n })} />
+        <Stepper label="Decks deep" value={d.deep} onChange={(n) => setDecks({ ...d, deep: n })} />
+      </div>
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>
+          Decks {k.x} × {k.y} m
+        </span>
+        <button
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-brand-700 hover:bg-white"
+          title="Turn the decks 90°"
+          onClick={() => setDecks({ ...d, turned: !d.turned })}
+        >
+          {d.turned ? <RectangleVertical size={14} /> : <RectangleHorizontal size={14} />} Turn decks
+        </button>
+      </div>
+      <label className="block text-xs text-slate-500">
+        Height
+        <select
+          className="input mt-1 py-1.5"
+          value={item.height ?? 0.4}
+          onChange={(e) => edit(item.id, (i) => void (i.height = parseFloat(e.target.value)), 'height')}
+        >
+          {STAGE_HEIGHTS.map((h) => (
+            <option key={h.m} value={h.m}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="text-sm font-medium">
+        {item.w.toFixed(2)} × {item.h.toFixed(2)} m <span className="font-normal text-slate-500">· {fmtFt(item.w)} × {fmtFt(item.h)}</span>
+      </p>
+      <ul className="space-y-0.5 text-xs text-slate-600">
+        <li>
+          {kit.decks} deck{kit.decks === 1 ? '' : 's'} · {kit.legs} legs at {Math.round(kit.height * 1000)} mm
+        </li>
+        <li>{kit.treads ? `${kit.treads} set${kit.treads === 1 ? '' : 's'} of stage stairs` : 'No stairs needed at this height'}</li>
+        <li>{kit.skirting} m of skirting (front and sides)</li>
+      </ul>
+      {kit.needsRail && (
+        <p className="flex gap-1.5 text-xs text-amber-800">
+          <AlertTriangle size={14} className="mt-px shrink-0" />
+          At this height, open sides usually need handrails or edge protection — check your local rules.
+        </p>
+      )}
+    </div>
+  )
+}
 
 const Single = ({ item }: { item: LayoutItem }) => {
   const guests = useEvent((s) => s.doc!.guests)
@@ -127,7 +208,8 @@ const Single = ({ item }: { item: LayoutItem }) => {
             </Row>
           )
         )}
-        {item.kind !== 'chair-block' && (
+        {isDeckStage(item) && <StageControls item={item} />}
+        {item.kind !== 'chair-block' && !isDeckStage(item) && (
           <div className="grid grid-cols-2 gap-2">
             <label className="text-xs text-slate-500">
               {item.kind === 'round-table' || item.kind === 'cocktail-table' ? 'Diameter (m)' : 'Width (m)'}

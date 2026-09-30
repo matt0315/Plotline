@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Crown, LogIn, LogOut, Check, Loader2, CreditCard, Home as HomeIcon, FlaskConical } from 'lucide-react'
+import { Crown, MessageSquarePlus, LogIn, LogOut, Check, Loader2, CreditCard, Home as HomeIcon, FlaskConical } from 'lucide-react'
 import { GATE_COPY, setDevPro, signIn, signOut, useAccount } from '../store/account'
 import { useUI } from '../store/ui'
 import { api } from '../lib/api'
@@ -175,6 +175,9 @@ export const AccountMenu = () => {
           </div>
           <MenuItem icon={<HomeIcon size={16} />} onClick={() => (useUI.getState().setScreen('home'), setOpen(false))}>
             All events
+          </MenuItem>
+          <MenuItem icon={<MessageSquarePlus size={16} />} onClick={() => (useUI.getState().set({ feedbackOpen: true }), setOpen(false))}>
+            Send feedback
           </MenuItem>
           {!isPro && (
             <MenuItem icon={<Crown size={16} className="text-brand-600" />} onClick={() => (startCheckout(), setOpen(false))}>

@@ -8,6 +8,7 @@ import { useEvent } from '../store/event'
 import { useUI } from '../store/ui'
 import { BRAND } from '../lib/brand'
 import { VenueSearch } from './VenueSearch'
+import { FeedbackButton } from './Feedback'
 import { Button } from './ui'
 
 const TYPES: { id: EventType; icon: React.ReactNode }[] = [
@@ -56,6 +57,8 @@ export const Onboarding = () => {
             )}
             <img src="/favicon.svg" className="h-8 w-8" alt="" />
             <span className="font-semibold">{BRAND}</span>
+            <div className="flex-1" />
+            <FeedbackButton />
           </div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Your whole event, planned in 30 seconds.</h1>
           <p className="mt-2 text-slate-600">Four answers. We draft the floor plan, run sheet, budget and supplier list — you edit from there. No signup.</p>

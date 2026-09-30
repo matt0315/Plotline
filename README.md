@@ -17,6 +17,7 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 
 - **30-second onboarding.** Pick event type, headcount, date and venue. It generates a correctly spaced floor plan, a timed run sheet, a USD budget with typical costs, a supplier checklist linked to the budget, forms and crew call times.
 - **Floor plan.** Drag and drop 27 furniture types. Rotate, resize, snap, align, measure, lock, and use layers. Chairs are drawn around tables. It flags walkways under 0.915 m (36 in) and anything blocking a fire exit.
+- **Staging from real decks.** Stages are built from standard 2.44 × 1.22 m (8 × 4 ft) decks: speaker riser, DJ riser, bridal stage, band stage, presentation stage, main stage and catwalk. You can resize by whole decks, turn them, and set the leg height (200–1200 mm). The inspector and load list count the decks, legs, stair sets and skirting, and flag heights that usually need handrails.
 - **Venue drawings.** Import DXF, DWG, PDF or a photo and design on top of it. DXF units are read from the file. PDFs can use their printed scale (1:100, etc.). For anything else, draw along one known wall to set the scale.
 - **Venue library.** Plans are private by default. A venue can publish its plan so organisers can find it and plan on it.
 - **Site map.** Real satellite imagery. Assets are placed at true size. Draw zones to get area and perimeter, and measure distances.
@@ -27,6 +28,7 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 - **Docs.** A form builder with 7 safety and ops templates. Forms support photo capture and on-screen signatures. You can get a crew QR link (no login needed), a CSV of responses, and PDFs.
 - **Crew.** Roster with call and finish times, hours, rates and a call sheet.
 - **Export event pack.** One PDF with the cover, floor plan (vector), site map, seating chart, place cards, guest list, run sheet, suppliers, crew, budget and load list.
+- **Feedback button.** It's in the top bar on every screen, so anyone (no account needed) can say what they need. Submissions are saved to D1 with which screen they were on and their event type, never their event data. Read them with `npm run feedback`.
 - **Also:** ⌘K command palette, undo/redo (drags count as one step), autosave, works on phones.
 
 ## Pricing
@@ -104,9 +106,11 @@ npm run dev
 
    The webhook is the only thing that grants Pro.
 
-5. **DWG (optional).** Run `npx wrangler secret put CLOUDCONVERT_API_KEY`. The browser uploads directly to CloudConvert, and jobs are tagged with the user's ID. LibreDWG is deliberately not used because it's GPL v3.
+5. **Feedback alerts (optional).** Feedback is always saved to D1; run `npm run feedback` to read the latest 50. To also get each one by email, set a `FEEDBACK_TO` variable (for example `npx wrangler secret put FEEDBACK_TO`). This needs Email Sending set up (step 2). Replies go straight to the sender when they left an email.
 
-6. **Deploy**
+6. **DWG (optional).** Run `npx wrangler secret put CLOUDCONVERT_API_KEY`. The browser uploads directly to CloudConvert, and jobs are tagged with the user's ID. LibreDWG is deliberately not used because it's GPL v3.
+
+7. **Deploy**
 
    ```bash
    npm run deploy

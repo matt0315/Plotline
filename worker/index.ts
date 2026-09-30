@@ -4,6 +4,7 @@ import * as events from './events'
 import * as plans from './plans'
 import * as billing from './billing'
 import * as dwg from './dwg'
+import { submitFeedback } from './feedback'
 
 type Handler = (req: Request, env: AppEnv, ...params: string[]) => Promise<Response>
 
@@ -39,6 +40,8 @@ const ROUTES: [string, string, Handler][] = [
   ['POST', '/api/checkout', billing.checkout],
   ['POST', '/api/portal', billing.portal],
   ['POST', '/api/stripe-webhook', billing.webhook],
+
+  ['POST', '/api/feedback', submitFeedback],
 
   ['POST', '/api/convert-dwg', dwg.startDwg],
   ['GET', '/api/convert-dwg', dwg.pollDwg],

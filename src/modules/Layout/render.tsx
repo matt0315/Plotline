@@ -3,6 +3,7 @@ import type { Guest, LayoutItem, Space, VenuePlan, BasePlanPlacement } from '../
 import { CHAIR, bbox, footprint, seatsLocal } from '../../lib/geometry'
 import { KIND_LABEL } from '../../data/furniture'
 import { initials, seatKey } from '../../lib/derived'
+import { deckDims } from '../../lib/staging'
 
 const STROKE = '#475569'
 const SW = 0.025
@@ -75,6 +76,23 @@ export const ItemShape = memo(function ItemShape({
     case 'chair':
       body = null
       break
+    case 'stage': {
+      const seams: React.ReactNode[] = []
+      if (item.decks) {
+        const k = deckDims(item.decks)
+        for (let i = 1; i < item.decks.across; i++) seams.push(<line key={`x${i}`} x1={-w / 2 + i * k.x} y1={-h / 2} x2={-w / 2 + i * k.x} y2={h / 2} />)
+        for (let j = 1; j < item.decks.deep; j++) seams.push(<line key={`y${j}`} x1={-w / 2} y1={-h / 2 + j * k.y} x2={w / 2} y2={-h / 2 + j * k.y} />)
+      }
+      body = (
+        <>
+          <rect x={-w / 2} y={-h / 2} width={w} height={h} fill={fill} stroke={STROKE} strokeWidth={SW * 1.6} />
+          <g stroke="#94a3b8" strokeWidth={0.015}>{seams}</g>
+          {/* Front edge — the audience side. */}
+          <line x1={-w / 2} y1={h / 2} x2={w / 2} y2={h / 2} stroke="#334155" strokeWidth={0.07} />
+        </>
+      )
+      break
+    }
     case 'dancefloor':
       body = (
         <>
@@ -140,6 +158,11 @@ export const ItemShape = memo(function ItemShape({
           >
             {label}
           </text>
+          {kind === 'stage' && item.height != null && (
+            <text textAnchor="middle" dominantBaseline="central" y={fs * 1.3} fontSize={fs * 0.75} fill="#475569" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+              {Math.round(item.height * 1000)} mm high
+            </text>
+          )}
         </Upright>
       )}
       {kind === 'exit' && (

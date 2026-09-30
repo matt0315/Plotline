@@ -5,6 +5,8 @@ export interface Secrets {
   STRIPE_WEBHOOK_SECRET?: string
   CLOUDCONVERT_API_KEY?: string
   APP_URL?: string
+  /** Where feedback notifications go (optional; needs Email Sending set up). */
+  FEEDBACK_TO?: string
 }
 
 export type AppEnv = Env & Secrets

@@ -7,6 +7,7 @@ import { seatMap } from '../../lib/derived'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
 import { BasePlanImage, Defs, ItemShape, SpaceOutline, planBounds } from './render'
 import { SNAP, useLayoutView, type View } from './viewStore'
+import { decksForSize, stageSize } from '../../lib/staging'
 import { addFurniture, copyItems, deleteItems, duplicateItems, nudge, pasteItems, rotateBy } from './layoutActions'
 import { nearestFreeSeat, seatGuest } from '../Guests/guestActions'
 import { toast } from '../../components/ui'
@@ -310,11 +311,15 @@ export const Canvas = () => {
         let h = Math.max(0.1, Math.abs(l.y - anchor.y))
         if (snap && !e.altKey) (w = Math.max(SNAP, snapTo(w, SNAP / 2))), (h = Math.max(0.1, snapTo(h, SNAP / 2)))
         if (isRound(o)) w = h = Math.max(w, h)
+        // Deck stages grow and shrink a whole deck at a time.
+        const decks = o.decks ? decksForSize(w, h, o.decks.turned) : null
+        if (decks) ({ w, h } = stageSize(decks))
         const c = toWorld(o, { x: anchor.x + (dr.sx * w) / 2, y: anchor.y + (dr.sy * h) / 2 })
         update((d) => {
           const i = d.layout.items.find((x) => x.id === dr.id)
           if (!i) return
           Object.assign(i, { w, h, x: c.x, y: c.y })
+          if (decks) i.decks = decks
           if (i.kind === 'banquet-table') i.seats = 2 * Math.max(1, Math.floor(Math.max(w, h) / 0.61))
         }, dr.key)
         return

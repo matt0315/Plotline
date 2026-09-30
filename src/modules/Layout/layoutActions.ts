@@ -17,12 +17,22 @@ export const makeItem = (key: string, x: number, y: number): LayoutItem => {
     w: f.w,
     h: f.h,
     rotation: 0,
-    label: f.kind === 'round-table' || (f.kind === 'banquet-table' && key !== 'head-table') ? `Table ${tables + 1}` : f.key === 'head-table' ? 'Head table' : f.kind === 'label' ? 'Label' : '',
+    label:
+      f.kind === 'round-table' || (f.kind === 'banquet-table' && key !== 'head-table')
+        ? `Table ${tables + 1}`
+        : f.key === 'head-table'
+          ? 'Head table'
+          : f.kind === 'label'
+            ? 'Label'
+            : f.kind === 'stage'
+              ? f.name.split(' · ')[0] // "Band stage · 12 decks" → "Band stage"
+              : '',
     seats: f.seats,
     rows: f.rows,
     cols: f.cols,
     color: f.color,
     layer: f.layer,
+    ...(f.decks ? { decks: { ...f.decks }, height: f.height } : {}),
   }
 }
 

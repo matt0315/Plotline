@@ -35,6 +35,7 @@ const item = (key: string, x: number, y: number, over: Partial<LayoutItem> = {})
     cols: f.cols,
     color: f.color,
     layer: f.layer,
+    ...(f.decks ? { decks: { ...f.decks }, height: f.height } : {}),
     ...over,
   }
 }
@@ -100,9 +101,9 @@ const corporateLayout = (g: number) => {
   const H = top + size.h + 7
   const cx = W / 2
   const items: LayoutItem[] = [
-    item('stage', cx, 3, { w: Math.min(10, W - 6), h: 4, label: 'Stage' }),
-    item('screen', cx - Math.min(10, W - 6) / 2 - 1.8, 1.8, { rotation: -20, label: 'Screen L' }),
-    item('screen', cx + Math.min(10, W - 6) / 2 + 1.8, 1.8, { rotation: 20, label: 'Screen R' }),
+    item('stage', cx, 3, { label: 'Stage' }),
+    item('screen', cx - FURNITURE_BY_KEY.stage.w / 2 - 1.8, 1.8, { rotation: -20, label: 'Screen L' }),
+    item('screen', cx + FURNITURE_BY_KEY.stage.w / 2 + 1.8, 1.8, { rotation: 20, label: 'Screen R' }),
   ]
   for (let b = 0; b < blocksAcross; b++) {
     const x = cx + (b - (blocksAcross - 1) / 2) * (size.w + gap)

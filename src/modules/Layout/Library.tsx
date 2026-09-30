@@ -6,7 +6,7 @@ import { StaticPlan } from './render'
 
 const Thumb = ({ f }: { f: FurnitureDef }) => (
   <StaticPlan
-    items={[{ id: f.key, kind: f.kind, x: 0, y: 0, w: f.w, h: f.h, rotation: 0, label: f.kind === 'label' ? 'Aa' : '', seats: f.seats, rows: f.rows, cols: f.cols, color: f.color, layer: f.layer }]}
+    items={[{ id: f.key, kind: f.kind, x: 0, y: 0, w: f.w, h: f.h, rotation: 0, label: f.kind === 'label' ? 'Aa' : '', seats: f.seats, rows: f.rows, cols: f.cols, color: f.color, layer: f.layer, decks: f.decks, height: f.height }]}
     spaces={[]}
     guests={[]}
     pad={0.25}
@@ -47,7 +47,7 @@ export const Library = ({ onAdded }: { onAdded?: () => void }) => {
                       onAdded?.()
                     }}
                     className="flex cursor-grab flex-col items-center gap-1 rounded-lg border border-transparent p-1.5 text-center hover:border-slate-200 hover:bg-slate-50 active:cursor-grabbing"
-                    title={`${f.name} — ${f.w}×${f.h} m`}
+                    title={`${f.name} — ${f.w}×${f.h} m${f.height ? ` · ${Math.round(f.height * 1000)} mm high` : ''}`}
                   >
                     <Thumb f={f} />
                     <span className="text-[11px] leading-tight text-slate-600">{f.name}</span>

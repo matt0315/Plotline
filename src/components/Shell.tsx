@@ -30,6 +30,7 @@ import { BRAND } from '../lib/brand'
 import { IconButton, Button } from './ui'
 import { AccountMenu } from './Account'
 import { CommandPalette } from './CommandPalette'
+import { FeedbackButton } from './Feedback'
 import { Overview } from '../modules/Overview'
 import { duplicateEvent } from '../store/actions'
 
@@ -123,6 +124,7 @@ const TopBar = () => {
       <IconButton className="sm:hidden" onClick={() => set({ palette: true })}>
         <Search size={18} />
       </IconButton>
+      <FeedbackButton compact />
       <Button size="sm" onClick={() => set({ shareOpen: true })} className="max-sm:hidden">
         <Share2 size={14} /> Share
       </Button>

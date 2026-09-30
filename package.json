@@ -11,7 +11,9 @@
     "types": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply plotline --local",
     "db:migrate:remote": "wrangler d1 migrations apply plotline --remote",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "feedback": "wrangler d1 execute plotline --remote --command \"SELECT created_at, kind, COALESCE(email, '-') AS email, message, context FROM feedback ORDER BY created_at DESC LIMIT 50\"",
+    "feedback:local": "wrangler d1 execute plotline --local --command \"SELECT created_at, kind, COALESCE(email, '-') AS email, message, context FROM feedback ORDER BY created_at DESC LIMIT 50\""
   },
   "dependencies": {
     "dxf": "^5.3.1",

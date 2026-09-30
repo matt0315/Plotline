@@ -11,6 +11,7 @@ import { BRAND, FREE_EVENT_LIMIT, PRICE_USD } from '../lib/brand'
 import { daysUntil } from '../lib/time'
 import { Button, IconButton, toast } from './ui'
 import { AccountMenu } from './Account'
+import { FeedbackButton } from './Feedback'
 
 export const Home = () => {
   const events = useEvent((s) => s.events)
@@ -28,6 +29,7 @@ export const Home = () => {
         <img src="/favicon.svg" className="h-7 w-7" alt="" />
         <span className="font-semibold">{BRAND}</span>
         <div className="flex-1" />
+        <FeedbackButton />
         <AccountMenu />
       </header>
       <div className="mx-auto max-w-4xl px-4 py-8">
