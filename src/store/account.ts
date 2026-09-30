@@ -97,3 +97,28 @@ export const cloudActive = () => {
   const s = useAccount.getState()
   return s.cloud && !!s.user && s.isPro
 }
+
+/**
+ * Re-check the plan when the tab comes back into view — e.g. after paying on Stripe's page,
+ * even if the customer wasn't redirected back. Throttled so tab-switching stays cheap.
+ */
+let lastCheck = 0
+const recheck = () => {
+  if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 5000) return
+  lastCheck = Date.now()
+  const wasPro = useAccount.getState().isPro
+  useAccount
+    .getState()
+    .refresh()
+    .then(async () => {
+      if (!wasPro && useAccount.getState().isPro) {
+        const { toast } = await import('../components/ui')
+        toast('You’re on Pro — everything is unlocked')
+        ;(await import('./persistence')).syncUp()
+      }
+    })
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', recheck)
+  document.addEventListener('visibilitychange', recheck)
+}
