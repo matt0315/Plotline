@@ -90,8 +90,8 @@ export const NumberCell = ({
       onBlur={() => setFocus(false)}
       onChange={(e) => {
         const raw = e.target.value
-        // Ignore letters rather than silently zeroing the value.
-        if (raw && !/^[\s$€£]*-?[\d,]*\.?\d*\s*$/.test(raw)) return
+        // Allow currency marks around the number (A$, ¥, €, 120 kr), but ignore stray letters rather than zeroing the value.
+        if (raw && (!/^\s*[A-Za-z]{0,3}\s?[^\w\s.,-]{0,2}\s*-?[\d,]*\.?\d*\s*(?:[A-Za-z]{0,3}|[^\w\s.,-]{0,2})\s*$/.test(raw) || (/[A-Za-z]/.test(raw) && !/\d/.test(raw)))) return
         setDraft(raw)
         const n = parseFloat(raw.replace(/[^0-9.-]/g, ''))
         onChange(Number.isFinite(n) ? n : 0)

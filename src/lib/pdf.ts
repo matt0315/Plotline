@@ -9,7 +9,7 @@ import { usePlans } from '../store/plans'
 import { useAccount } from '../store/account'
 import { budgetTotals, crewCost, lineActual, linePaid, loadList, runSheet, seatingStats } from './derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
-import { money } from './money'
+import { pdfMoneyFor } from './money'
 import { fmt12 } from './time'
 import { crewHours, dayTitle, sortShifts } from './roster'
 import { isSeating } from './geometry'
@@ -149,6 +149,7 @@ const stamp = (p: jsPDF, d: EventDoc, watermark: boolean) => {
 }
 
 export const exportPack = async (d: EventDoc, sections: Section[]) => {
+  const money = pdfMoneyFor(d.currency)
   const watermark = !useAccount.getState().isPro
   const firstLandscape = sections[0] === 'layout' || sections[0] === 'site' || sections[0] === 'seating'
   const p = new jsPDF({ unit: 'pt', format: 'letter', orientation: firstLandscape ? 'landscape' : 'portrait' }) as Doc

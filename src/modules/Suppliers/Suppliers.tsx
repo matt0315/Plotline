@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, Phone, Mail, HardHat } from 'lucide-react'
 import type { Supplier, SupplierStatus } from '../../types/event'
-import { useEvent, update } from '../../store/event'
+import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
-import { money } from '../../lib/money'
 import { dayTitle, newShift, sortShifts } from '../../lib/roster'
 import { addMinutes, fmt12 } from '../../lib/time'
 import { sectionColor } from '../../data/roster'
@@ -76,6 +75,7 @@ const SupplierRoster = ({ supplierId }: { supplierId: string }) => {
 
 const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () => void }) => {
   const d = useEvent((x) => x.doc)!
+  const money = useMoney()
   const linked = !!s.budgetLineId && d.budget.some((b) => b.id === s.budgetLineId)
   return (
     <div id={`sup-${s.id}`} className={`${s.status === 'declined' ? 'opacity-60' : ''}`}>
@@ -176,6 +176,7 @@ const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () =
 
 const Compare = ({ category, onClose }: { category: string; onClose: () => void }) => {
   const d = useEvent((x) => x.doc)!
+  const money = useMoney()
   const list = d.suppliers.filter((s) => s.category === category)
   const quoted = list.filter((s) => s.quote > 0)
   const low = quoted.length ? Math.min(...quoted.map((s) => s.quote)) : 0
@@ -218,6 +219,7 @@ const Compare = ({ category, onClose }: { category: string; onClose: () => void 
 
 export default function Suppliers() {
   const d = useEvent((s) => s.doc)!
+  const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const focusId = useUI((s) => s.focusId)
   const [open, setOpen] = useState<Set<string>>(new Set(focusId ? [focusId] : []))

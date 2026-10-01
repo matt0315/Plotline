@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Trash2, HardHat, FileDown, Wallet, Copy, AlertTriangle, Sparkles, Store, Users, CalendarPlus, X, Check } from 'lucide-react'
 import type { CrewMember, Shift } from '../../types/event'
-import { useEvent, update } from '../../store/event'
+import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { SECTIONS, sectionColor } from '../../data/roster'
 import { crewCost, crewHours, dayTitle, doubleBookings, newShift, openPositions, relLabel, shiftHours, sortShifts, suggestedRoster } from '../../lib/roster'
 import { addMinutes, fmt12 } from '../../lib/time'
-import { money } from '../../lib/money'
+import { currencySymbol } from '../../lib/money'
 import { uid } from '../../lib/id'
 import { Button, Cell, Empty, IconButton, Modal, NumberCell, PageHeader, focusSoon, toast } from '../../components/ui'
 
@@ -346,6 +346,7 @@ const Roster = ({ onEdit, personFilter, clearFilter }: { onEdit: (s: Shift) => v
 
 const People = ({ onShowShifts }: { onShowShifts: (id: string) => void }) => {
   const d = useEvent((s) => s.doc)!
+  const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const add = () => {
     const p = newPerson()
@@ -373,7 +374,7 @@ const People = ({ onShowShifts }: { onShowShifts: (id: string) => void }) => {
               <th className="px-3 py-2 font-medium">Role</th>
               <th className="px-3 py-2 font-medium">Mobile</th>
               <th className="px-3 py-2 font-medium">Email</th>
-              <th className="w-24 px-3 py-2 text-right font-medium">$/hr</th>
+              <th className="w-24 px-3 py-2 text-right font-medium">{currencySymbol(d.currency)}/hr</th>
               <th className="w-24 px-3 py-2 text-right font-medium">Shifts</th>
               <th className="w-24 px-3 py-2 text-right font-medium">Cost</th>
               <th className="w-10" />
@@ -439,6 +440,7 @@ const People = ({ onShowShifts }: { onShowShifts: (id: string) => void }) => {
 
 export default function Crew() {
   const d = useEvent((s) => s.doc)!
+  const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const focusId = useUI((s) => s.focusId)
   const [view, setView] = useState<'roster' | 'people'>('roster')

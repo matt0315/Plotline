@@ -226,7 +226,7 @@ export interface CrewMember {
   role: string
   phone: string
   email: string
-  /** Hourly rate, USD. Hours come from the shifts they're rostered on. */
+  /** Hourly rate in the event's currency. Hours come from the shifts they're rostered on. */
   rate: number
   notes: string
   /** Legacy single call time — converted into a shift on load. */
@@ -291,7 +291,8 @@ export interface EventDoc {
   date: string
   startTime: string
   guestCount: number
-  currency: 'USD'
+  /** ISO code for planning amounts (budget, quotes, rates). Billing for Plotline itself is always USD. */
+  currency: string
   budgetTarget: number
   venue: Venue
 

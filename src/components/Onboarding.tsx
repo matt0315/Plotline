@@ -9,7 +9,8 @@ import { useUI } from '../store/ui'
 import { BRAND } from '../lib/brand'
 import { VenueSearch } from './VenueSearch'
 import { FeedbackButton } from './Feedback'
-import { Button } from './ui'
+import { Button, Select } from './ui'
+import { currencyOptions, localCurrency } from '../lib/money'
 
 const TYPES: { id: EventType; icon: React.ReactNode }[] = [
   { id: 'wedding', icon: <Heart size={20} /> },
@@ -23,7 +24,7 @@ const QUICK = [50, 100, 150, 250, 500]
 const WHAT_YOU_GET = [
   'Floor plan with tables spaced for service and access',
   'Run sheet with every beat of the day, timed',
-  'USD budget with typical costs for your size',
+  'A budget with typical costs for your size, in your currency',
   'Supplier checklist linked to the budget',
   'Safety docs and crew call times',
 ]
@@ -35,12 +36,13 @@ export const Onboarding = () => {
   const [name, setName] = useState('')
   const [venue, setVenue] = useState<Venue>({ ...DEFAULT_VENUE })
   const [busy, setBusy] = useState(false)
+  const [currency, setCurrency] = useState(localCurrency)
   const hasEvents = useEvent((s) => s.events.length > 0)
 
   const build = async (blank = false) => {
     if (!(await canCreateEvent())) return
     setBusy(true)
-    const doc = blank ? blankEvent({ name: name || 'Untitled event', type, guestCount: guests, date, venue }) : generateEvent({ type, name, date, guestCount: guests, venue })
+    const doc = blank ? blankEvent({ name: name || 'Untitled event', type, guestCount: guests, date, venue, currency }) : generateEvent({ type, name, date, guestCount: guests, venue, currency })
     await createAndOpen(doc)
     setBusy(false)
   }
@@ -115,6 +117,12 @@ export const Onboarding = () => {
               <label className="label">4 · Where?</label>
               <VenueSearch value={venue.name} onPick={(p) => setVenue({ name: p.name, address: p.address, lat: p.lat, lng: p.lng, zoom: 18 })} />
               {venue.address && <p className="mt-1.5 truncate text-xs text-slate-500">{venue.address}</p>}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+              <span>Budget in</span>
+              <Select value={currency} options={currencyOptions} onChange={setCurrency} className="max-w-[15rem]" />
+              <span className="text-xs text-slate-400">You can change it later</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">

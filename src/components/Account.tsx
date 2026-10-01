@@ -3,7 +3,7 @@ import { Crown, MessageSquarePlus, LogIn, LogOut, Check, Loader2, CreditCard, Ho
 import { GATE_COPY, setDevPro, signIn, signOut, useAccount } from '../store/account'
 import { useUI } from '../store/ui'
 import { api } from '../lib/api'
-import { BRAND, PRICE_USD } from '../lib/brand'
+import { BRAND, PRICE_LABEL } from '../lib/brand'
 import { Button, Modal, toast } from './ui'
 
 const PRO_FEATURES = [
@@ -49,10 +49,10 @@ export const UpgradeDialog = () => {
         <h2 className="text-lg font-semibold">Unlock everything</h2>
         {reason && <p className="mt-1 text-sm text-slate-600">{GATE_COPY[reason]}</p>}
         <div className="mt-5 text-4xl font-semibold tracking-tight">
-          ${PRICE_USD}
+          {PRICE_LABEL}
           <span className="text-base font-normal text-slate-500">/month</span>
         </div>
-        <p className="text-xs text-slate-500">One price. Every feature. Cancel any time.</p>
+        <p className="text-xs text-slate-500">One price, billed in US dollars. Every feature. Cancel any time.</p>
       </div>
       <ul className="mt-5 space-y-2">
         {PRO_FEATURES.map((f) => (
@@ -71,7 +71,7 @@ export const UpgradeDialog = () => {
           setBusy(false)
         }}
       >
-        {busy && <Loader2 size={16} className="animate-spin" />} Upgrade for ${PRICE_USD}/mo
+        {busy && <Loader2 size={16} className="animate-spin" />} Upgrade for {PRICE_LABEL}/mo
       </Button>
       {dev && (
         <button
@@ -171,7 +171,7 @@ export const AccountMenu = () => {
         <div className="absolute right-0 z-[1100] mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-xl">
           <div className="border-b border-slate-100 px-3 py-2.5">
             <div className="truncate font-medium">{user?.email ?? 'Not signed in'}</div>
-            <div className="text-xs text-slate-500">{isPro ? `Pro · $${PRICE_USD}/mo` : 'Free plan · saved in this browser'}</div>
+            <div className="text-xs text-slate-500">{isPro ? `Pro · ${PRICE_LABEL}/mo` : 'Free plan · saved in this browser'}</div>
           </div>
           <MenuItem icon={<HomeIcon size={16} />} onClick={() => (useUI.getState().setScreen('home'), setOpen(false))}>
             All events
@@ -181,7 +181,7 @@ export const AccountMenu = () => {
           </MenuItem>
           {!isPro && (
             <MenuItem icon={<Crown size={16} className="text-brand-600" />} onClick={() => (startCheckout(), setOpen(false))}>
-              Upgrade — ${PRICE_USD}/mo
+              Upgrade — {PRICE_LABEL}/mo
             </MenuItem>
           )}
           {isPro && user && (

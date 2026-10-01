@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { produce, type Draft } from 'immer'
 import type { EventDoc, EventSummary } from '../types/event'
 import { storage } from './persistence'
+import { moneyFor } from '../lib/money'
 
 const HISTORY = 100
 const COALESCE_MS = 800
@@ -113,3 +115,9 @@ window.addEventListener('beforeunload', () => {
 
 export const doc = () => useEvent.getState().doc!
 export const update = (fn: (d: Draft<EventDoc>) => void, key?: string) => useEvent.getState().update(fn, key)
+
+/** Formatter for the open event's currency. */
+export const useMoney = () => {
+  const currency = useEvent((s) => s.doc?.currency ?? 'USD')
+  return useMemo(() => moneyFor(currency), [currency])
+}

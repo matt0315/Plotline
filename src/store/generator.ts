@@ -1,4 +1,5 @@
 import type { BudgetLine, CrewMember, EventDoc, EventType, LayoutItem, SiteItem, Space, Supplier, Venue, Zone } from '../types/event'
+import { convert } from '../lib/money'
 import { SCHEMA_VERSION } from '../types/event'
 import { uid } from '../lib/id'
 import { addMinutes } from '../lib/time'
@@ -16,6 +17,8 @@ export interface GenerateInput {
   guestCount: number
   venue: Venue
   startTime?: string
+  /** Planning currency; template costs are USD and get converted. */
+  currency?: string
 }
 
 export const DEFAULT_VENUE: Venue = { name: '', address: '', lat: 40.7527, lng: -73.9772, zoom: 17 }
@@ -240,12 +243,13 @@ export const generateEvent = (input: GenerateInput): EventDoc => {
 
   const site = input.type === 'festival' ? festivalSite(input.venue, g) : { items: [], zones: [] }
 
-  // Budget: typical US costs, contingency as a share of everything else.
+  // Budget: typical US costs in the event's currency, contingency as a share of everything else.
+  const currency = input.currency ?? 'USD'
   const budget: BudgetLine[] = t.budget.map(([category, name, fn]) => ({
     id: uid('b'),
     category,
     name,
-    estimate: fn(g),
+    estimate: convert(fn(g), 'USD', currency),
     actual: 0,
     paid: 0,
   }))
@@ -288,7 +292,9 @@ export const generateEvent = (input: GenerateInput): EventDoc => {
     date: input.date,
     startTime: start,
     guestCount: g,
-    budgetTarget: Math.round(budget.reduce((s, b) => s + b.estimate, 0) / 500) * 500,
+    currency,
+    // Rounded up so a fresh plan starts on budget, not a few dollars over.
+    budgetTarget: Math.ceil(budget.reduce((s, b) => s + b.estimate, 0) / 500) * 500,
     venue: input.venue,
     layout,
     site: { ...site, measures: [] },

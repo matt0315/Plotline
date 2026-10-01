@@ -1,9 +1,9 @@
 import { Plus, Trash2, Link2, Wallet, HardHat } from 'lucide-react'
+import { CurrencyPicker } from '../../components/CurrencyPicker'
 import type { BudgetLine } from '../../types/event'
-import { useEvent, update } from '../../store/event'
+import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { budgetTotals, crewCost, lineActual, linePaid } from '../../lib/derived'
-import { money } from '../../lib/money'
 import { uid } from '../../lib/id'
 import { Button, Cell, Empty, IconButton, NumberCell, PageHeader, Stat, focusSoon } from '../../components/ui'
 
@@ -15,6 +15,7 @@ const edit = (id: string, fn: (b: BudgetLine) => void, key: string) =>
 
 export default function Budget() {
   const d = useEvent((s) => s.doc)!
+  const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const go = useUI((s) => s.go)
   const t = budgetTotals(d)
@@ -42,13 +43,16 @@ export default function Budget() {
     <div>
       <PageHeader
         title="Budget"
-        sub="Estimates until you have real numbers — booked supplier quotes and crew hours flow in automatically. All figures USD."
+        sub="Estimates until you have real numbers — booked supplier quotes and crew hours flow in automatically."
         actions={
-          !readOnly && (
-            <Button variant="primary" onClick={() => add()}>
-              <Plus size={16} /> Add line
-            </Button>
-          )
+          <>
+            <CurrencyPicker />
+            {!readOnly && (
+              <Button variant="primary" onClick={() => add()}>
+                <Plus size={16} /> Add line
+              </Button>
+            )}
+          </>
         }
       />
 

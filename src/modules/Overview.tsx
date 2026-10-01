@@ -1,10 +1,9 @@
 import { ArrowRight, CalendarDays, CheckCircle2, MapPin, Clock, Users, Wallet, Store, HardHat, FileCheck2, LayoutGrid } from 'lucide-react'
-import { useEvent, update } from '../store/event'
+import { useEvent, update, useMoney } from '../store/event'
 import { useUI } from '../store/ui'
 import { usePlan } from '../store/plans'
 import { budgetTotals, loadList, nextSteps, runSheet, seatingStats } from '../lib/derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
-import { money } from '../lib/money'
 import { daysUntil, fmt12 } from '../lib/time'
 import { openPositions, relLabel } from '../lib/roster'
 import { StaticPlan } from './Layout/render'
@@ -31,6 +30,7 @@ const Bar = ({ value, max, tone = 'brand' }: { value: number; max: number; tone?
 
 export const Overview = () => {
   const d = useEvent((s) => s.doc)!
+  const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const go = useUI((s) => s.go)
   const plan = usePlan(d.layout.basePlan?.planId)

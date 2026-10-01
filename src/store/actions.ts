@@ -1,10 +1,11 @@
 import type { EventDoc } from '../types/event'
 import { storage } from './persistence'
 import { gate } from './account'
-import { useEvent } from './event'
+import { update, useEvent } from './event'
 import { useUI } from './ui'
 import { FREE_EVENT_LIMIT } from '../lib/brand'
 import { uid } from '../lib/id'
+import { convert } from '../lib/money'
 import { migrate } from './migrate'
 
 /** Free plan holds one event. The single place that rule lives. */
@@ -42,3 +43,24 @@ export const duplicateEvent = async (source: EventDoc, name?: string) => {
   const now = new Date().toISOString()
   await createAndOpen({ ...source, id: uid('e'), name: name ?? `${source.name} (copy)`, meta: { ...source.meta, created: now, updated: now } })
 }
+
+/** Switch the event's planning currency, optionally converting every amount at an approximate rate. */
+export const setCurrency = (to: string, convertAmounts: boolean) =>
+  update((d) => {
+    const from = d.currency
+    if (convertAmounts) {
+      const c = (n: number) => convert(n, from, to)
+      d.budgetTarget = c(d.budgetTarget)
+      for (const l of d.budget) {
+        l.estimate = c(l.estimate)
+        l.actual = c(l.actual)
+        l.paid = c(l.paid)
+      }
+      for (const s of d.suppliers) {
+        s.quote = c(s.quote)
+        s.paid = c(s.paid)
+      }
+      for (const p of d.crew) p.rate = c(p.rate)
+    }
+    d.currency = to
+  })

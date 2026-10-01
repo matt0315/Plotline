@@ -7,7 +7,7 @@ import { canCreateEvent, createAndOpen, deleteEvent, duplicateEvent, openEvent }
 import { storage } from '../store/persistence'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { importJson } from '../lib/share'
-import { BRAND, FREE_EVENT_LIMIT, PRICE_USD } from '../lib/brand'
+import { BRAND, FREE_EVENT_LIMIT, PRICE_LABEL } from '../lib/brand'
 import { daysUntil } from '../lib/time'
 import { Button, IconButton, toast } from './ui'
 import { AccountMenu } from './Account'
@@ -66,7 +66,7 @@ export const Home = () => {
 
         {!isPro && (
           <p className="mb-4 text-sm text-slate-500">
-            Free plan · {Math.min(events.length, FREE_EVENT_LIMIT)} of {FREE_EVENT_LIMIT} event, saved in this browser. Unlimited events, sync and sharing are ${PRICE_USD}/mo.
+            Free plan · {Math.min(events.length, FREE_EVENT_LIMIT)} of {FREE_EVENT_LIMIT} event, saved in this browser. Unlimited events, sync and sharing are {PRICE_LABEL}/mo.
           </p>
         )}
 

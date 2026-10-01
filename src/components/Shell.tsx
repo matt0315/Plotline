@@ -21,11 +21,10 @@ import {
   Cloud,
   Eye,
 } from 'lucide-react'
-import { useEvent } from '../store/event'
+import { useEvent, useMoney } from '../store/event'
 import { useUI } from '../store/ui'
 import { useAccount } from '../store/account'
 import { budgetTotals, seatingStats, type Tab } from '../lib/derived'
-import { money } from '../lib/money'
 import { BRAND } from '../lib/brand'
 import { IconButton, Button } from './ui'
 import { AccountMenu } from './Account'
@@ -78,6 +77,7 @@ const SaveBadge = () => {
 
 const TopBar = () => {
   const doc = useEvent((s) => s.doc)!
+  const money = useMoney()
   const canUndo = useEvent((s) => s.past.length > 0)
   const canRedo = useEvent((s) => s.future.length > 0)
   const { undo, redo } = useEvent.getState()

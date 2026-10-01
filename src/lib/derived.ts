@@ -1,4 +1,5 @@
 import type { BudgetLine, EventDoc, Guest, Phase } from '../types/event'
+import { formatMoney } from './money'
 import { toMinutes } from './time'
 import { crewCost, doubleBookings, openPositions } from './roster'
 import { KIND_LABEL } from '../data/furniture'
@@ -160,7 +161,7 @@ export const nextSteps = (d: EventDoc): { text: string; tab: Tab }[] => {
   const open = d.suppliers.filter((s) => s.status === 'researching' || s.status === 'quoted')
   if (open.length) out.push({ text: `${open.length} supplier${open.length === 1 ? '' : 's'} still to book`, tab: 'suppliers' })
   const b = budgetTotals(d)
-  if (b.target > 0 && b.variance < 0) out.push({ text: `Forecast is ${Math.round(-b.variance).toLocaleString()} USD over budget`, tab: 'budget' })
+  if (b.target > 0 && b.variance < 0) out.push({ text: `Forecast is ${formatMoney(-b.variance, d.currency)} over budget`, tab: 'budget' })
   const pending = d.guests.filter((g) => g.rsvp === 'pending').length
   if (pending) out.push({ text: `${pending} RSVP${pending === 1 ? '' : 's'} outstanding`, tab: 'guests' })
   if (!d.docs.some((f) => /risk/i.test(f.title)) && d.guestCount >= 100)

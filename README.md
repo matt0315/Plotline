@@ -15,7 +15,7 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 
 ## What's in it
 
-- **30-second onboarding.** Pick event type, headcount, date and venue. It generates a correctly spaced floor plan, a timed run sheet, a USD budget with typical costs, a supplier checklist linked to the budget, forms and crew call times.
+- **30-second onboarding.** Pick event type, headcount, date and venue. It generates a correctly spaced floor plan, a timed run sheet, a budget with typical costs in your currency (picked from your locale), a supplier checklist linked to the budget, forms and crew call times.
 - **Floor plan.** Drag and drop 27 furniture types. Rotate, resize, snap, align, measure, lock, and use layers. Chairs are drawn around tables. It flags walkways under 0.915 m (36 in) and anything blocking a fire exit.
 - **Staging from real decks.** Stages are built from standard 2.44 × 1.22 m (8 × 4 ft) decks: speaker riser, DJ riser, bridal stage, band stage, presentation stage, main stage and catwalk. You can resize by whole decks, turn them, and set the leg height (200–1200 mm). The inspector and load list count the decks, legs, stair sets and skirting, and flag heights that usually need handrails.
 - **Venue drawings.** Import DXF, DWG, PDF or a photo and design on top of it. DXF units are read from the file. PDFs can use their printed scale (1:100, etc.). For anything else, draw along one known wall to set the scale.
@@ -28,7 +28,7 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
   - Paper from A4/Letter up to A1 and 24 × 36″ posters. Names auto-size to fit one sheet.
 - **Run sheet.** Split into set-up, event and pack-down. Handles overnight builds. "Shift this and everything after" moves the rest of the day when things slip.
 - **Suppliers.** Group by category and compare quotes side by side against the budget. Choosing one books it and declines the others.
-- **Budget.** Shows target, forecast, committed, paid and due, with a category breakdown.
+- **Budget.** Shows target, forecast, committed, paid and due, with a category breakdown. Each event can be planned in any of 28 currencies. Switching currency can convert every amount (budget, quotes, payments, crew rates) at an approximate rate, or keep the numbers. The subscription is always billed in USD.
 - **Docs.** A form builder with 7 safety and ops templates. Forms support photo capture and on-screen signatures. You can get a crew QR link (no login needed), a CSV of responses, and PDFs.
 - **Crew roster.** Plan who does what and when, before, during and after the event: site prep and lawn mowing days out, marquee builds, bump in, table and equipment setup, lighting, service, bar, security, pack down, bump out and cleaners.
   - Each shift has a section, task, day, times and location, and is covered by either your own team (with "2 of 4 filled" tracking) or a supplier's team.
