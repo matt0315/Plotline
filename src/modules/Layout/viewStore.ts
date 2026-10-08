@@ -28,6 +28,9 @@ interface LayoutViewState {
   fill: FillRegion | null
   fillOpts: FillOptions
   fillPreview: LayoutItem[]
+  /** 2D plan or 3D view, and the seat to look from when it was opened that way. */
+  mode: '2d' | '3d'
+  seatView: { itemId: string; index: number } | null
   set: (p: Partial<LayoutViewState>) => void
   select: (ids: string[]) => void
 }
@@ -45,6 +48,8 @@ export const useLayoutView = create<LayoutViewState>((set) => ({
   fill: null,
   fillOpts: DEFAULT_FILL,
   fillPreview: [],
+  mode: '2d',
+  seatView: null,
   panel: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'inspector' : null,
   set: (p) => set(p),
   select: (selected) => set({ selected }),

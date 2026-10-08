@@ -30,6 +30,7 @@ import { KIND_LABEL } from '../../data/furniture'
 import { clearanceIssues, isSeating, chairBlockSize, fmtArea, fmtFt, seatsLocal, tentPoles, tentWallLength, WALKWAY_MIN } from '../../lib/geometry'
 import { TENT_TYPES, tentName, tentSpec } from '../../data/tents'
 import { zones } from '../../lib/capacity'
+import { sightlineSummary } from '../../lib/sightlines'
 import { runOf } from '../../lib/runs'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
@@ -465,6 +466,9 @@ const Single = ({ item }: { item: LayoutItem }) => {
                     <>
                       <span className="flex-1 truncate">{g.name}</span>
                       {g.dietary && <span className="truncate text-[10px] text-amber-700">{g.dietary}</span>}
+                      <button onClick={() => useLayoutView.getState().set({ mode: '3d', seatView: { itemId: item.id, index: i } })} className="text-slate-400 hover:text-brand-600" title={`See ${g.name}’s view in 3D`}>
+                        <Eye size={14} />
+                      </button>
                       <button onClick={() => seatGuest(g.id, undefined)} className="text-slate-400 hover:text-red-500" title="Unseat">
                         <X size={14} />
                       </button>
@@ -532,6 +536,42 @@ const Multi = ({ items }: { items: LayoutItem[] }) => {
           ))}
         </div>
       </Row>
+    </Section>
+  )
+}
+
+/** Seats that can't see the main focus, grouped by table, with a way to look from one of them. */
+const SightlineSection = () => {
+  const items = useEvent((s) => s.doc!.layout.items)
+  const { focus, blocked, byTable } = sightlineSummary(items)
+  if (!focus) return null
+  const label = (id: string) => items.find((i) => i.id === id)?.label || 'Table'
+  return (
+    <Section title={blocked.length ? `Sightlines · ${blocked.length} seat${blocked.length === 1 ? '' : 's'}` : 'Sightlines'}>
+      {blocked.length ? (
+        <>
+          <p className="mb-1.5 text-xs text-amber-700">
+            {blocked.length} seat{blocked.length === 1 ? ' has' : 's have'} a blocked view of {focus.label}:
+          </p>
+          <ul className="space-y-1">
+            {[...byTable.entries()].map(([id, n]) => {
+              const first = blocked.find((b) => b.itemId === id)!
+              return (
+                <li key={id} className="flex items-center gap-2 text-xs text-slate-600">
+                  <button onClick={() => useLayoutView.getState().select([id])} className="flex-1 text-left hover:text-slate-900">
+                    {label(id)} · {n} seat{n === 1 ? '' : 's'}
+                  </button>
+                  <button onClick={() => useLayoutView.getState().set({ mode: '3d', seatView: { itemId: id, index: first.index } })} className="flex items-center gap-1 text-brand-600" title="See the view from one of these seats in 3D">
+                    <Eye size={12} /> View
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      ) : (
+        <p className="text-xs text-emerald-700">Every seat can see {focus.label}.</p>
+      )}
     </Section>
   )
 }
@@ -624,6 +664,8 @@ const Nothing = ({ onImport }: { onImport: () => void }) => {
           <p className="text-xs text-emerald-700">Walkways and exits are clear.</p>
         )}
       </Section>
+
+      <SightlineSection />
 
       <CapacitySection />
 

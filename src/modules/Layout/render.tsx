@@ -24,7 +24,7 @@ export const Glyph = ({ name, size, color = '#334155' }: { name?: string; size: 
 const STROKE = '#475569'
 const SW = 0.025
 
-const Chair = ({ x, y, angle, guest, highlight }: { x: number; y: number; angle: number; guest?: Guest; highlight?: boolean }) => (
+const Chair = ({ x, y, angle, guest, highlight, blocked }: { x: number; y: number; angle: number; guest?: Guest; highlight?: boolean; blocked?: boolean }) => (
   <g transform={`translate(${x} ${y}) rotate(${angle})`}>
     <rect
       x={-CHAIR / 2}
@@ -32,9 +32,9 @@ const Chair = ({ x, y, angle, guest, highlight }: { x: number; y: number; angle:
       width={CHAIR}
       height={CHAIR}
       rx={0.09}
-      fill={guest ? (guest.rsvp === 'yes' ? '#4f46e5' : '#818cf8') : highlight ? '#c7d2fe' : '#f1f5f9'}
-      stroke={guest ? '#3730a3' : '#94a3b8'}
-      strokeWidth={0.018}
+      fill={guest ? (guest.rsvp === 'yes' ? '#4f46e5' : '#818cf8') : highlight ? '#c7d2fe' : blocked ? '#fde68a' : '#f1f5f9'}
+      stroke={blocked ? '#d97706' : guest ? '#3730a3' : '#94a3b8'}
+      strokeWidth={blocked ? 0.04 : 0.018}
     />
     {guest && (
       <text transform={`rotate(${-angle})`} textAnchor="middle" dominantBaseline="central" fontSize={0.17} fontWeight={600} fill="#fff" style={{ pointerEvents: 'none' }}>
@@ -151,11 +151,14 @@ export const ItemShape = memo(function ItemShape({
   seats,
   showSeats = true,
   highlightSeat,
+  blocked,
 }: {
   item: LayoutItem
   seats?: Map<string, Guest>
   showSeats?: boolean
   highlightSeat?: number
+  /** Seat indices with a blocked view of the stage or screen. */
+  blocked?: Set<number>
 }) {
   const { w, h, kind } = item
   if (kind === 'tent' && item.tent)
@@ -284,7 +287,7 @@ export const ItemShape = memo(function ItemShape({
     <g transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}>
       {body}
       {local.map((p, i) => (
-        <Chair key={i} x={p.x} y={p.y} angle={chairAngle(p)} guest={guestAt(i)} highlight={highlightSeat === i} />
+        <Chair key={i} x={p.x} y={p.y} angle={chairAngle(p)} guest={guestAt(i)} highlight={highlightSeat === i} blocked={blocked?.has(i)} />
       ))}
       {label && kind !== 'exit' && (
         <Upright rotation={item.rotation}>

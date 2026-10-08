@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wand2, Search, Users, FileDown } from 'lucide-react'
+import { Wand2, Search, Users, FileDown, Eye } from 'lucide-react'
 import { useEvent } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { seatingStats } from '../../lib/derived'
@@ -92,6 +92,16 @@ export const GuestDock = () => {
                 {g.seat ? (
                   <span className={`truncate text-[11px] ${armed === g.id ? 'text-brand-100' : 'text-slate-400'}`}>
                     {tableName(g.seat.itemId)}
+                    <button
+                      className="ml-1.5 align-middle hover:text-brand-500"
+                      title={`See ${g.name}’s view in 3D`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        useLayoutView.getState().set({ mode: '3d', seatView: { itemId: g.seat!.itemId, index: g.seat!.index } })
+                      }}
+                    >
+                      <Eye size={12} className="inline" />
+                    </button>
                     <button
                       className="ml-1 hover:text-red-500"
                       onClick={(e) => {

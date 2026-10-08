@@ -2,6 +2,7 @@ import type { BudgetLine, EventDoc, Guest, Phase } from '../types/event'
 import { formatMoney } from './money'
 import { kitCost, kitRows } from './kit'
 import { egressIssues } from './capacity'
+import { sightlineSummary } from './sightlines'
 import { toMinutes } from './time'
 import { crewCost, doubleBookings, openPositions } from './roster'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
@@ -146,6 +147,11 @@ export const nextSteps = (d: EventDoc): { text: string; tab: Tab }[] => {
   const issues = clearanceIssues(d.layout.items)
   if (issues.length) out.push({ text: `${issues.length} spacing issue${issues.length === 1 ? '' : 's'} on the floor plan`, tab: 'layout' })
   for (const z of egressIssues(d)) out.push({ text: `${z.name}: ${z.short}`, tab: 'layout' })
+  const sight = sightlineSummary(d.layout.items)
+  if (sight.blocked.length) {
+    const tables = [...sight.byTable.keys()].map((id) => d.layout.items.find((i) => i.id === id)?.label || 'a table').slice(0, 3)
+    out.push({ text: `${sight.blocked.length} seat${sight.blocked.length === 1 ? ' can’t' : 's can’t'} see ${sight.focus!.label} (${tables.join(', ')}${sight.byTable.size > 3 ? '…' : ''})`, tab: 'layout' })
+  }
   const open = d.suppliers.filter((s) => s.status === 'researching' || s.status === 'quoted')
   if (open.length) out.push({ text: `${open.length} supplier${open.length === 1 ? '' : 's'} still to book`, tab: 'suppliers' })
   const b = budgetTotals(d)

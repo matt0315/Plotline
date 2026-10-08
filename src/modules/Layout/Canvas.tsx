@@ -5,6 +5,7 @@ import { usePlan, savePlan, usePlans } from '../../store/plans'
 import { snapToRun } from '../../lib/runs'
 import { TENT_TYPES } from '../../data/tents'
 import { regionFor, regionPoly } from '../../lib/fill'
+import { blockedSeats } from '../../lib/sightlines'
 import { clearanceIssues, footprint, hitTest, isRound, pointInPoly, rotate, snap as snapTo, toLocal, toWorld, fmtM, fmtFt, type Pt } from '../../lib/geometry'
 import { seatMap } from '../../lib/derived'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
@@ -87,6 +88,12 @@ export const Canvas = () => {
   }, [visible])
   const issues = useMemo(() => clearanceIssues(d.layout.items), [d.layout.items])
   // A pole clash is the furniture's problem — tinting a whole marquee red would hide everything inside.
+  // Seats that can't see the stage or screen, by table.
+  const blockedBy = useMemo(() => {
+    const m = new Map<string, Set<number>>()
+    for (const b of blockedSeats(d.layout.items)) m.set(b.itemId, (m.get(b.itemId) ?? new Set()).add(b.index))
+    return m
+  }, [d.layout.items])
   const warnIds = useMemo(() => new Set(issues.flatMap((i) => (i.kind === 'pole' ? [i.a] : [i.a, i.b]))), [issues])
   const selItems = d.layout.items.filter((i) => selected.includes(i.id))
 
@@ -498,7 +505,7 @@ export const Canvas = () => {
           ))}
           {plan && basePlan && <BasePlanImage plan={plan} placement={basePlan} />}
           {ordered.map((i) => (
-            <ItemShape key={i.id} item={i} seats={seats} showSeats={showSeats} highlightSeat={hoverSeat?.itemId === i.id ? hoverSeat.index : undefined} />
+            <ItemShape key={i.id} item={i} seats={seats} showSeats={showSeats} highlightSeat={hoverSeat?.itemId === i.id ? hoverSeat.index : undefined} blocked={blockedBy.get(i.id)} />
           ))}
 
           {/* Spacing warnings */}

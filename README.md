@@ -16,7 +16,18 @@ Built as a faster, simpler competitor to GoodEvent. GoodEvent sells seven separa
 ## What's in it
 
 - **30-second onboarding.** Pick event type, headcount, date and venue. It generates a correctly spaced floor plan, a timed run sheet, a budget with typical costs in your currency (picked from your locale), a supplier checklist linked to the budget, forms and crew call times.
-- **Floor plan.** Drag and drop 27 furniture types. Rotate, resize, snap, align, measure, lock, and use layers. Chairs are drawn around tables. It flags walkways under 0.915 m (36 in) and anything blocking a fire exit.
+- **Floor plan.** A library of 180 items at real size: tables, seating, AV and lighting, bars and catering, décor, facilities, barriers, games and vehicles. Search it by name or use. Rotate, resize, snap, align, measure, lock, and use layers. Chairs are drawn around tables. It flags walkways under 0.915 m (36 in) and anything blocking a fire exit.
+  - **Trestles join up** into long tables: drag one onto another's end, or tap "Add a trestle to the run".
+  - **Your kit:** add your own items at their real size, and set what you own and what each item costs to hire. The load list shows what you're short, and a budget line follows the plan's kit cost.
+  - **Request an item:** send a name, its size and up to 3 photos. A stand-in goes on your plan straight away. Read requests with `npm run requests`.
+- **Marquees and structures.** Frame, clearspan, pole, sailcloth, stretch and tipi tents in standard spans and whole bays, with walls, doorways and every leg and pole. Poles are solid, so a table on one gets flagged. Link a marquee to the site map and it keeps the same size there. The load list counts tents, sidewall metres and weights.
+- **Fill an area.** Press F, then drag out an area or click inside a marquee or room. Choose rounds, trestle runs, theatre rows or cocktail tables and a spacing, and see the result before placing it. It keeps walkways, exits, a gap in front of the stage, and poles clear.
+- **Capacity guide.** Each room and marquee shows its area, rough capacity by layout, and whether its exits cover the people seated (number of exits, and 5 mm of exit width per person). Shortfalls appear in the inspector and in What's next.
+- **3D.**
+  - Orbit round the plan or walk through it, in day, golden-hour or night lighting. Marquee roofs and room walls can be solid, see-through or hidden.
+  - **View from a seat:** see the stage or screen from any guest's chair.
+  - **Sightline check:** flags seats whose view is blocked by a pillar, pole, speaker or wall.
+  - Save any view as a PNG.
 - **Staging from real decks.** Stages are built from standard 2.44 × 1.22 m (8 × 4 ft) decks: speaker riser, DJ riser, bridal stage, band stage, presentation stage, main stage and catwalk. You can resize by whole decks, turn them, and set the leg height (200–1200 mm). The inspector and load list count the decks, legs, stair sets and skirting, and flag heights that usually need handrails.
 - **Venue drawings.** Import DXF, DWG, PDF or a photo and design on top of it. DXF units are read from the file. PDFs can use their printed scale (1:100, etc.). For anything else, draw along one known wall to set the scale.
 - **Venue library.** Plans are private by default. A venue can publish its plan so organisers can find it and plan on it.
