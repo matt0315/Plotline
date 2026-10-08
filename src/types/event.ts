@@ -27,6 +27,7 @@ export type LayoutKind =
   | 'exit'
   | 'pillar'
   | 'label'
+  | 'asset'
 
 /** A thing on the floor plan. All geometry in metres; x/y is the centre. */
 export interface LayoutItem {
@@ -48,8 +49,51 @@ export interface LayoutItem {
   locked?: boolean
   /** Stages built from 2.44 × 1.22 m decks: how many across and deep. Size follows from this. */
   decks?: StageDecks
-  /** Platform height in metres (stages). */
+  /** Height in metres: stage platforms, and how tall an asset stands (for 3D and sightlines). */
   height?: number
+  /** Library or kit item this was placed from. A snapshot, so plans render without the library entry. */
+  asset?: AssetRef
+  /** Trestles that butt end to end into one long run; touching ends lose their end chairs. */
+  joinable?: boolean
+  /** Which ends (−, + along the long side) touch another table in the run. Kept up to date by the store. */
+  joined?: [boolean, boolean]
+  /** Library key it was placed from (furniture, asset or `kit:<id>`), for pricing and the load list. */
+  key?: string
+}
+
+export interface AssetRef {
+  /** Library key (src/data/assets.ts) or kit entry id. */
+  key?: string
+  kitId?: string
+  name: string
+  shape: 'rect' | 'round'
+  /** Lucide icon name drawn inside the footprint. */
+  icon?: string
+}
+
+/** One thing in a user's own kit: a custom item they can place, or their stock and hire price for a library item. */
+export interface KitEntry {
+  id: ID
+  name: string
+  group: string
+  /** Footprint (w across, d deep) and height, metres. */
+  w: number
+  d: number
+  z: number
+  shape: 'rect' | 'round'
+  color: string
+  icon?: string
+  /** How many you own. 0 = you hire everything. */
+  owned: number
+  /** Hire or cost price per unit, in `currency`. */
+  price: number
+  currency: string
+  /** Set when this entry prices a library item rather than defining a new one. */
+  libraryKey?: string
+  notes?: string
+  /** Added from an item request while the real one is drawn. */
+  requestId?: string
+  updated: string
 }
 
 export interface StageDecks {
@@ -181,7 +225,8 @@ export interface BudgetLine {
   actual: number
   paid: number
   supplierId?: ID
-  source?: 'crew'
+  /** Read live: crew = rostered hours × rates; kit = floor-plan items × your kit prices. */
+  source?: 'crew' | 'kit'
 }
 
 export type FieldType =

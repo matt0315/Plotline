@@ -16,6 +16,9 @@ export interface FurnitureDef {
   resizable?: boolean
   decks?: StageDecks
   height?: number
+  /** Trestles: butt end to end into one long table. */
+  joinable?: boolean
+  tags?: string
 }
 
 /** A stage preset built from whole 2.44 × 1.22 m decks. */
@@ -39,6 +42,8 @@ export const FURNITURE: FurnitureDef[] = [
   { key: 'round-72', kind: 'round-table', name: 'Round 72″ · 12', group: 'Tables', w: 1.83, h: 1.83, seats: 12, layer: 'furniture', color: '#ffffff' },
   { key: 'banquet-6', kind: 'banquet-table', name: 'Banquet 6ft · 6', group: 'Tables', w: 1.83, h: 0.76, seats: 6, layer: 'furniture', color: '#ffffff', resizable: true },
   { key: 'banquet-8', kind: 'banquet-table', name: 'Banquet 8ft · 8', group: 'Tables', w: 2.44, h: 0.76, seats: 8, layer: 'furniture', color: '#ffffff', resizable: true },
+  { key: 'trestle-18', kind: 'banquet-table', name: 'Trestle 1.8m · 6', group: 'Tables', w: 1.8, h: 0.75, seats: 6, layer: 'furniture', color: '#ffffff', joinable: true, tags: 'long table joinable 6ft feasting' },
+  { key: 'trestle-24', kind: 'banquet-table', name: 'Trestle 2.4m · 8', group: 'Tables', w: 2.4, h: 0.75, seats: 8, layer: 'furniture', color: '#ffffff', joinable: true, tags: 'long table joinable 8ft feasting' },
   { key: 'head-table', kind: 'banquet-table', name: 'Head table · 12', group: 'Tables', w: 7.3, h: 0.76, seats: 12, layer: 'furniture', color: '#fef3c7', resizable: true },
   { key: 'cocktail', kind: 'cocktail-table', name: 'Cocktail (standing)', group: 'Tables', w: 0.76, h: 0.76, seats: 0, layer: 'furniture', color: '#ffffff' },
 
@@ -102,4 +107,5 @@ export const KIND_LABEL: Record<LayoutKind, string> = {
   exit: 'Fire exit',
   pillar: 'Pillar',
   label: 'Label',
+  asset: 'Item',
 }

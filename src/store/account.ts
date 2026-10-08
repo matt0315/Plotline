@@ -89,7 +89,10 @@ export const setDevPro = async (on: boolean) => {
       /* storage blocked */
     }
   await useAccount.getState().refresh()
-  if (on) (await import('./persistence')).syncUp()
+  if (on) {
+    await (await import('./persistence')).syncUp()
+    ;(await import('./kit')).useKit.getState().load()
+  }
 }
 
 /** Cloud sync applies to signed-in Pro users. */
@@ -115,6 +118,7 @@ const recheck = () => {
         const { toast } = await import('../components/ui')
         toast('You’re on Pro — everything is unlocked')
         ;(await import('./persistence')).syncUp()
+        ;(await import('./kit')).useKit.getState().load()
       }
     })
 }

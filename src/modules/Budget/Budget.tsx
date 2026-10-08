@@ -1,9 +1,11 @@
-import { Plus, Trash2, Link2, Wallet, HardHat } from 'lucide-react'
+import { Plus, Trash2, Link2, Wallet, HardHat, Package } from 'lucide-react'
 import { CurrencyPicker } from '../../components/CurrencyPicker'
 import type { BudgetLine } from '../../types/event'
 import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { budgetTotals, crewCost, lineActual, linePaid } from '../../lib/derived'
+import { kitCost } from '../../lib/kit'
+import { useKit } from '../../store/kit'
 import { uid } from '../../lib/id'
 import { Button, Cell, Empty, IconButton, NumberCell, PageHeader, Stat, focusSoon } from '../../components/ui'
 
@@ -18,7 +20,11 @@ export default function Budget() {
   const money = useMoney()
   const readOnly = useEvent((s) => s.readOnly)
   const go = useUI((s) => s.go)
+  // Kit prices live outside the event, so re-render when they change.
+  useKit((s) => s.updated)
   const t = budgetTotals(d)
+  const kitTotal = kitCost(d)
+  const hasKitLine = d.budget.some((l) => l.source === 'kit')
   const cats = [...new Set(d.budget.map((b) => b.category))]
   const perGuest = d.guestCount ? t.forecast / d.guestCount : 0
 
@@ -69,6 +75,20 @@ export default function Budget() {
         <Stat label="Paid" value={money(t.paid)} sub={`${money(t.due)} still due`} />
       </div>
 
+      {!readOnly && kitTotal > 0 && !hasKitLine && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
+          <Package size={16} className="shrink-0" />
+          <span className="flex-1">Your kit prices put this floor plan at {money(kitTotal)}. Track it as a budget line that updates as the plan changes?</span>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => update((x) => void x.budget.push({ id: uid('b'), category: 'Rentals', name: 'Floor-plan kit', estimate: Math.round(kitTotal), actual: 0, paid: 0, source: 'kit' }))}
+          >
+            Add to budget
+          </Button>
+        </div>
+      )}
+
       {!d.budget.length ? (
         <div className="card">
           <Empty icon={<Wallet />} title="No budget lines" body="Add lines for each cost. Link suppliers so their quotes update the budget as they change." action={!readOnly && <Button variant="primary" onClick={() => add()}>Add line</Button>} />
@@ -104,7 +124,7 @@ export default function Budget() {
                     const sup = l.supplierId ? d.suppliers.find((s) => s.id === l.supplierId) : undefined
                     const actual = lineActual(l, d)
                     const paid = linePaid(l, d)
-                    const readThrough = !!sup || l.source === 'crew'
+                    const readThrough = !!sup || l.source === 'crew' || l.source === 'kit'
                     return (
                       <tr key={l.id} id={`bud-${l.id}`} className="group">
                         <td className="px-1 py-0.5">
@@ -118,6 +138,11 @@ export default function Budget() {
                             {l.source === 'crew' && (
                               <button onClick={() => go('crew')} className="flex shrink-0 items-center gap-1 rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] text-brand-700" title="Actual is crew hours × rates">
                                 <HardHat size={11} /> Crew {money(crewCost(d))}
+                              </button>
+                            )}
+                            {l.source === 'kit' && (
+                              <button onClick={() => go('layout')} className="flex shrink-0 items-center gap-1 rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] text-brand-700" title="Actual is floor-plan items × your kit prices">
+                                <Package size={11} /> Floor plan {money(kitTotal)}
                               </button>
                             )}
                           </div>

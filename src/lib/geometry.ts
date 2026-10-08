@@ -59,6 +59,8 @@ export const seatsLocal = (item: LayoutItem): Pt[] => {
       }
       const endOff = L / 2 + CHAIR_GAP + CHAIR / 2
       for (let e = 0; pts.length < n && e < 2; e++) {
+        // A trestle butted against another has no room for an end chair there.
+        if (item.joined?.[e]) continue
         const d = e === 0 ? -endOff : endOff
         pts.push(long ? { x: d, y: 0 } : { x: 0, y: d })
       }
@@ -182,6 +184,10 @@ export const polyGap = (A: Pt[], B: Pt[]): number => {
 
 export type Clash = { a: string; b: string; gap: number; kind: 'walkway' | 'exit' | 'overlap' }
 
+/** Two trestles in a run touch end to end by design — that's not an overlap. */
+const buttedTrestles = (A: LayoutItem, B: LayoutItem) =>
+  !!A.joinable && !!B.joinable && Math.abs(Math.hypot(A.x - B.x, A.y - B.y) - (Math.max(A.w, A.h) + Math.max(B.w, B.h)) / 2) < 0.05
+
 // Things you stand or place furniture on — a table on a stage isn't a clash.
 const FLOOR_KINDS = new Set(['wall', 'label', 'door', 'dancefloor', 'pillar', 'stage'])
 
@@ -200,6 +206,7 @@ export const clearanceIssues = (items: LayoutItem[]): Clash[] => {
       // Cheap reject before the polygon test.
       if (Math.hypot(A.x - B.x, A.y - B.y) > Math.max(A.w, A.h) + Math.max(B.w, B.h) + 3) continue
       const gap = polyGap(polys.get(A.id)!, polys.get(B.id)!)
+      if (gap === 0 && buttedTrestles(A, B)) continue
       if (gap === 0) out.push({ a: A.id, b: B.id, gap, kind: 'overlap' })
       else if (gap < WALKWAY_MIN && isSeating(A) && isSeating(B)) out.push({ a: A.id, b: B.id, gap, kind: 'walkway' })
     }

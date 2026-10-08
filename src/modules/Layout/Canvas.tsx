@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { LayoutItem } from '../../types/event'
 import { useEvent, update, doc as getDoc } from '../../store/event'
 import { usePlan, savePlan, usePlans } from '../../store/plans'
+import { snapToRun } from '../../lib/runs'
 import { clearanceIssues, footprint, hitTest, isRound, pointInPoly, rotate, snap as snapTo, toLocal, toWorld, fmtM, fmtFt, type Pt } from '../../lib/geometry'
 import { seatMap } from '../../lib/derived'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
@@ -283,6 +284,15 @@ export const Canvas = () => {
         if (snap && a && !e.altKey) {
           dx = snapTo(a.x + dx, SNAP) - a.x
           dy = snapTo(a.y + dy, SNAP) - a.y
+        }
+        // A lone trestle butts flush against the end of another (Alt to place freely).
+        if (a && dr.orig.size === 1 && !e.altKey) {
+          const all = getDoc().layout.items
+          const me = all.find((i) => i.id === dr.anchor)
+          if (me?.joinable) {
+            const pull = snapToRun({ ...me, x: a.x + dx, y: a.y + dy }, all)
+            if (pull) (dx += pull.x), (dy += pull.y)
+          }
         }
         update((d) => {
           for (const i of d.layout.items) {

@@ -5,6 +5,8 @@ import * as plans from './plans'
 import * as billing from './billing'
 import * as dwg from './dwg'
 import { submitFeedback } from './feedback'
+import { submitItemRequest } from './requests'
+import { getKit, putKit } from './kit'
 
 type Handler = (req: Request, env: AppEnv, ...params: string[]) => Promise<Response>
 
@@ -42,6 +44,10 @@ const ROUTES: [string, string, Handler][] = [
   ['POST', '/api/stripe-webhook', billing.webhook],
 
   ['POST', '/api/feedback', submitFeedback],
+  ['POST', '/api/item-requests', submitItemRequest],
+
+  ['GET', '/api/kit', getKit],
+  ['PUT', '/api/kit', putKit],
 
   ['POST', '/api/convert-dwg', dwg.startDwg],
   ['GET', '/api/convert-dwg', dwg.pollDwg],

@@ -26,12 +26,13 @@ import type { Layer, LayoutItem } from '../../types/event'
 import { useEvent, update } from '../../store/event'
 import { usePlan } from '../../store/plans'
 import { KIND_LABEL } from '../../data/furniture'
-import { clearanceIssues, isSeating, chairBlockSize, fmtFt, WALKWAY_MIN } from '../../lib/geometry'
+import { clearanceIssues, isSeating, chairBlockSize, fmtFt, seatsLocal, WALKWAY_MIN } from '../../lib/geometry'
+import { runOf } from '../../lib/runs'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
 import { STAGE_HEIGHTS, deckDims, isDeckStage, stageKit, stageSize } from '../../lib/staging'
 import { useLayoutView } from './viewStore'
-import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, rotateBy } from './layoutActions'
+import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, extendRun, rotateBy } from './layoutActions'
 import { seatGuest } from '../Guests/guestActions'
 import { Button, IconButton, NumberCell, toast } from '../../components/ui'
 
@@ -139,6 +140,28 @@ const StageControls = ({ item }: { item: LayoutItem }) => {
   )
 }
 
+/** Trestles butted end to end: the whole run's size and seats, and one tap to add another. */
+const RunControls = ({ item }: { item: LayoutItem }) => {
+  const items = useEvent((s) => s.doc!.layout.items)
+  const run = runOf(items, item.id)
+  const seats = run.reduce((n, t) => n + seatsLocal(t).length, 0)
+  const length = run.reduce((n, t) => n + Math.max(t.w, t.h), 0)
+  return (
+    <div className="rounded-lg bg-slate-50 p-2.5 text-xs text-slate-600">
+      {run.length > 1 ? (
+        <>
+          Run of <strong className="text-slate-800">{run.length}</strong> · {length.toFixed(1)} m · <strong className="text-slate-800">{seats}</strong> seats
+        </>
+      ) : (
+        'Drag another trestle onto either end to join them into one long table.'
+      )}
+      <Button size="sm" className="mt-2 w-full" onClick={() => extendRun(item.id)}>
+        <Plus size={14} /> Add a trestle to the run
+      </Button>
+    </div>
+  )
+}
+
 const Single = ({ item }: { item: LayoutItem }) => {
   const guests = useEvent((s) => s.doc!.guests)
   const seats = seatMap(guests)
@@ -151,7 +174,7 @@ const Single = ({ item }: { item: LayoutItem }) => {
 
   return (
     <>
-      <Section title={KIND_LABEL[item.kind]}>
+      <Section title={item.asset?.name ?? (item.joinable ? 'Trestle' : KIND_LABEL[item.kind])}>
         <input ref={label} className="input" placeholder="Label" value={item.label} onChange={(e) => edit(item.id, (i) => void (i.label = e.target.value), 'label')} />
         {item.kind === 'chair-block' ? (
           <div className="grid grid-cols-2 gap-2">
@@ -209,6 +232,14 @@ const Single = ({ item }: { item: LayoutItem }) => {
           )
         )}
         {isDeckStage(item) && <StageControls item={item} />}
+        {item.joinable && <RunControls item={item} />}
+        {item.kind === 'asset' && (
+          <Row label="Height">
+            <div className="input w-24 p-0">
+              <NumberCell value={item.height ?? 1} format={(n) => `${n.toFixed(2)} m`} onChange={(n) => edit(item.id, (i) => void (i.height = Math.max(0, Math.min(30, n))), 'height')} />
+            </div>
+          </Row>
+        )}
         {item.kind !== 'chair-block' && !isDeckStage(item) && (
           <div className="grid grid-cols-2 gap-2">
             <label className="text-xs text-slate-500">

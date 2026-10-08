@@ -4,6 +4,7 @@ import { produce, type Draft } from 'immer'
 import type { EventDoc, EventSummary } from '../types/event'
 import { storage } from './persistence'
 import { moneyFor } from '../lib/money'
+import { fixJoins } from '../lib/runs'
 
 const HISTORY = 100
 const COALESCE_MS = 800
@@ -44,6 +45,8 @@ export const useEvent = create<EventState>((set, get) => ({
     if (!doc || readOnly) return
     const next = produce(doc, (d) => {
       fn(d)
+      // Trestle runs: keep each table's joined ends current whatever moved it.
+      if (d.layout.items.some((i) => i.joinable)) fixJoins(d.layout.items)
       d.meta.updated = new Date().toISOString()
     })
     if (next === doc) return

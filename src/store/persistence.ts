@@ -4,7 +4,7 @@
  * writes also go through to the Cloudflare Worker and reads take the newest copy.
  */
 import { get, set, del } from 'idb-keyval'
-import type { EventDoc, EventSummary, VenuePlan } from '../types/event'
+import type { EventDoc, EventSummary, KitEntry, VenuePlan } from '../types/event'
 import { api, blobToDataUrl } from '../lib/api'
 import { cloudActive } from './account'
 
@@ -183,6 +183,33 @@ const writeThrough: Storage = {
 }
 
 export const storage = (): Storage => (cloudActive() ? writeThrough : local)
+
+/* ---------- Your kit (per person, shared across events) ---------- */
+
+export interface KitDoc {
+  entries: KitEntry[]
+  updated: string
+}
+
+const EMPTY_KIT: KitDoc = { entries: [], updated: '' }
+
+/** Newest of this browser's copy and (on Pro) the account's copy. */
+export const loadKit = async (): Promise<KitDoc> => {
+  const here = (await get<KitDoc>('kit')) ?? EMPTY_KIT
+  if (!cloudActive()) return here
+  const there = await api<KitDoc>('/api/kit').catch(() => null)
+  if (there && there.updated > here.updated) {
+    await set('kit', there)
+    return there
+  }
+  if (here.updated && (!there || here.updated > there.updated)) await api('/api/kit', { method: 'PUT', json: here }).catch(() => {})
+  return here
+}
+
+export const saveKit = async (kit: KitDoc) => {
+  await set('kit', kit)
+  if (cloudActive()) await api('/api/kit', { method: 'PUT', json: kit })
+}
 export const localStorageAdapter = local
 
 /**

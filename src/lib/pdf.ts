@@ -10,6 +10,7 @@ import { useAccount } from '../store/account'
 import { budgetTotals, crewCost, lineActual, linePaid, loadList, runSheet, seatingStats } from './derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { pdfMoneyFor } from './money'
+import { kitRows } from './kit'
 import { fmt12 } from './time'
 import { crewHours, dayTitle, sortShifts } from './roster'
 import { isSeating } from './geometry'
@@ -359,8 +360,30 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
 
   if (has('load')) {
     newPage(p, first, 'portrait')
-    const y = heading(p, 'Load list', 'From the floor plan and site map')
-    table(p, y, ['Item', 'Qty'], loadList(d).map(([k, n]) => [k, n]), { columnStyles: { 1: { halign: 'right', cellWidth: 60 } } })
+    const rows = kitRows(d)
+    const priced = rows.some((r) => r.owned != null || r.unit)
+    const y = heading(p, 'Load list', priced ? 'From the floor plan and site map, against your kit' : 'From the floor plan and site map')
+    if (priced) {
+      const site = loadList(d).filter(([k]) => k.endsWith('(site)'))
+      table(
+        p,
+        y,
+        ['Item', 'Qty', 'Own', 'Short', 'Each', 'Cost'],
+        [
+          ...rows.map((r) => [r.label, r.qty, r.owned ?? '', r.owned != null ? r.short || '—' : '', r.unit ? money(r.unit, r.unit % 1 !== 0) : '', r.cost ? money(r.cost) : '']),
+          ...site.map(([k, n]) => [k, n, '', '', '', '']),
+          ['Total', '', '', '', '', money(rows.reduce((t, r) => t + r.cost, 0))],
+        ],
+        {
+          columnStyles: { 1: { halign: 'right', cellWidth: 44 }, 2: { halign: 'right', cellWidth: 44 }, 3: { halign: 'right', cellWidth: 44 }, 4: { halign: 'right', cellWidth: 64 }, 5: { halign: 'right', cellWidth: 72 } },
+          didParseCell: (c) => {
+            if (c.section !== 'body') return
+            if (c.column.index === 3 && typeof c.cell.raw === 'number' && c.cell.raw > 0) c.cell.styles.textColor = [180, 83, 9]
+            if (c.row.index === rows.length + site.length) c.cell.styles.fontStyle = 'bold'
+          },
+        },
+      )
+    } else table(p, y, ['Item', 'Qty'], loadList(d).map(([k, n]) => [k, n]), { columnStyles: { 1: { halign: 'right', cellWidth: 60 } } })
   }
 
   if (first.v) return

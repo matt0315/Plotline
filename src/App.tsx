@@ -25,6 +25,8 @@ const boot = async () => {
     toast(signin === 'ok' ? `Signed in as ${useAccount.getState().user?.email ?? 'you'}` : 'That sign-in link has expired — request a new one')
     history.replaceState(null, '', location.pathname)
   }
+  // Your kit prices the load list and budget, so load it before anything reads them.
+  import('./store/kit').then(({ useKit }) => useKit.getState().load())
   // Pro and signed in: upload anything made on this device before signing in.
   import('./store/persistence')
     .then(({ syncUp }) => syncUp())

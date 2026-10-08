@@ -1,24 +1,57 @@
 import type { LayoutItem } from '../../types/event'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
+import { ASSETS_BY_KEY } from '../../data/assets'
+import { kitKey } from '../../data/library'
+import { kitEntries } from '../../lib/kit'
+import { nextInRun, runOf } from '../../lib/runs'
 import { doc, update } from '../../store/event'
 import { uid } from '../../lib/id'
 import { bbox, footprint, isSeating, snap as snapTo } from '../../lib/geometry'
 import { SNAP, useLayoutView, viewCenter } from './viewStore'
 
 export const makeItem = (key: string, x: number, y: number): LayoutItem => {
+  const base = { id: uid('i'), key, x: snapTo(x, SNAP), y: snapTo(y, SNAP), rotation: 0 }
+  // Your own kit: a custom item with your sizes.
+  if (key.startsWith('kit:')) {
+    const k = kitEntries().find((e) => kitKey(e.id) === key)
+    if (!k) throw new Error(`No kit item ${key}`)
+    return {
+      ...base,
+      kind: 'asset',
+      w: k.w,
+      h: k.d,
+      label: '',
+      seats: 0,
+      color: k.color,
+      layer: 'furniture',
+      height: k.z,
+      asset: { kitId: k.id, name: k.name, shape: k.shape, icon: k.icon },
+    }
+  }
+  const a = ASSETS_BY_KEY[key]
+  if (a)
+    return {
+      ...base,
+      kind: 'asset',
+      w: a.w,
+      h: a.d,
+      label: '',
+      seats: 0,
+      color: a.color,
+      layer: a.group === 'Barriers & structure' ? 'structure' : a.group === 'Décor' ? 'decor' : 'furniture',
+      height: a.z,
+      asset: { key: a.key, name: a.name, shape: a.shape, icon: a.icon },
+    }
   const f = FURNITURE_BY_KEY[key]
   const d = doc()
   const tables = d.layout.items.filter((i) => i.kind === 'round-table' || i.kind === 'banquet-table').length
   return {
-    id: uid('i'),
+    ...base,
     kind: f.kind,
-    x: snapTo(x, SNAP),
-    y: snapTo(y, SNAP),
     w: f.w,
     h: f.h,
-    rotation: 0,
     label:
-      f.kind === 'round-table' || (f.kind === 'banquet-table' && key !== 'head-table')
+      f.kind === 'round-table' || (f.kind === 'banquet-table' && key !== 'head-table' && !f.joinable)
         ? `Table ${tables + 1}`
         : f.key === 'head-table'
           ? 'Head table'
@@ -32,8 +65,21 @@ export const makeItem = (key: string, x: number, y: number): LayoutItem => {
     cols: f.cols,
     color: f.color,
     layer: f.layer,
+    ...(f.joinable ? { joinable: true } : {}),
     ...(f.decks ? { decks: { ...f.decks }, height: f.height } : {}),
   }
+}
+
+/** Add another trestle on the end of a run, butted flush. */
+export const extendRun = (id: string) => {
+  const items = doc().layout.items
+  const run = runOf(items, id)
+  const at = nextInRun(run)
+  const last = run[run.length - 1]
+  if (!at || !last) return
+  const t: LayoutItem = { ...structuredClone(last), id: uid('i'), x: at.x, y: at.y, label: '', joined: undefined, locked: false }
+  update((d) => void d.layout.items.push(t), `extend-${id}`)
+  useLayoutView.getState().select([t.id])
 }
 
 /** Add at a point, or at the centre of the current view. */

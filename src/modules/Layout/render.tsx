@@ -4,6 +4,21 @@ import { CHAIR, bbox, footprint, seatsLocal } from '../../lib/geometry'
 import { KIND_LABEL } from '../../data/furniture'
 import { initials, seatKey } from '../../lib/derived'
 import { deckDims } from '../../lib/staging'
+import { ASSET_ICONS } from '../../data/assetIcons'
+
+/** A lucide icon (24-unit box, stroked) scaled to `size` metres and centred on the origin. */
+export const Glyph = ({ name, size, color = '#334155' }: { name?: string; size: number; color?: string }) => {
+  const node = name ? ASSET_ICONS[name] : undefined
+  if (!node) return null
+  return (
+    <g transform={`translate(${-size / 2} ${-size / 2}) scale(${size / 24})`} fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: 'none' }}>
+      {node.map(([tag, attrs], i) => {
+        const Tag = tag as 'path'
+        return <Tag key={i} {...(attrs as Record<string, string>)} />
+      })}
+    </g>
+  )
+}
 
 const STROKE = '#475569'
 const SW = 0.025
@@ -28,7 +43,13 @@ const Chair = ({ x, y, angle, guest, highlight }: { x: number; y: number; angle:
   </g>
 )
 
-const labelFor = (i: LayoutItem) => i.label || (i.kind === 'chair' || i.kind === 'plant' || i.kind === 'pillar' ? '' : KIND_LABEL[i.kind])
+const labelFor = (i: LayoutItem) => {
+  if (i.label) return i.label
+  // Library items show their name when there's room; trestles in a run stay unlabelled.
+  if (i.kind === 'asset') return Math.min(i.w, i.h) >= 0.8 && Math.max(i.w, i.h) >= 1.4 ? (i.asset?.name ?? '') : ''
+  if (i.joinable || i.kind === 'chair' || i.kind === 'plant' || i.kind === 'pillar') return ''
+  return KIND_LABEL[i.kind]
+}
 
 /** Keeps text upright however the item is rotated. */
 const Upright = ({ rotation, children }: { rotation: number; children: React.ReactNode }) => <g transform={`rotate(${-rotation})`}>{children}</g>
@@ -125,6 +146,28 @@ export const ItemShape = memo(function ItemShape({
     case 'screen':
       body = <rect x={-w / 2} y={-h / 2} width={w} height={h} fill={fill} rx={0.03} />
       break
+    case 'asset': {
+      const round = item.asset?.shape === 'round'
+      const g = Math.min(0.7, Math.min(w, h) * (label ? 0.42 : 0.62))
+      const dark = /^#(?:[0-3][0-9a-f]|4[0-7])/i.test(fill)
+      body = (
+        <>
+          {round ? (
+            <ellipse rx={w / 2} ry={h / 2} fill={fill} stroke={STROKE} strokeWidth={SW} />
+          ) : (
+            <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={Math.min(0.06, Math.min(w, h) / 6)} fill={fill} stroke={STROKE} strokeWidth={SW} />
+          )}
+          {g >= 0.08 && (
+            <Upright rotation={item.rotation}>
+              <g transform={label ? `translate(0 ${-g * 0.45})` : undefined}>
+                <Glyph name={item.asset?.icon} size={g} color={dark ? '#e2e8f0' : '#475569'} />
+              </g>
+            </Upright>
+          )}
+        </>
+      )
+      break
+    }
     default:
       body = <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={0.06} fill={fill} stroke={STROKE} strokeWidth={SW} />
   }
@@ -153,7 +196,7 @@ export const ItemShape = memo(function ItemShape({
             fontSize={kind === 'label' ? Math.min(h * 0.7, 0.6) : fs}
             fontWeight={kind === 'label' ? 600 : 500}
             fill={kind === 'screen' || kind === 'wall' ? '#fff' : kind === 'label' ? '#0f172a' : '#334155'}
-            y={kind === 'chair-block' ? -h / 2 - 0.3 : 0}
+            y={kind === 'chair-block' ? -h / 2 - 0.3 : kind === 'asset' ? Math.min(0.7, Math.min(w, h) * 0.42) * 0.45 : 0}
             style={{ pointerEvents: 'none', userSelect: 'none' }}
           >
             {label}
