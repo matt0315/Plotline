@@ -3,10 +3,11 @@ import type { LayoutItem } from '../../types/event'
 import { useEvent, update, doc as getDoc } from '../../store/event'
 import { usePlan, savePlan, usePlans } from '../../store/plans'
 import { snapToRun } from '../../lib/runs'
+import { TENT_TYPES } from '../../data/tents'
 import { clearanceIssues, footprint, hitTest, isRound, pointInPoly, rotate, snap as snapTo, toLocal, toWorld, fmtM, fmtFt, type Pt } from '../../lib/geometry'
 import { seatMap } from '../../lib/derived'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
-import { BasePlanImage, Defs, ItemShape, SpaceOutline, planBounds } from './render'
+import { BasePlanImage, Defs, ItemShape, SpaceOutline, drawOrder, planBounds } from './render'
 import { SNAP, useLayoutView, type View } from './viewStore'
 import { decksForSize, stageSize } from '../../lib/staging'
 import { addFurniture, copyItems, deleteItems, duplicateItems, nudge, pasteItems, rotateBy } from './layoutActions'
@@ -80,11 +81,11 @@ export const Canvas = () => {
   const seats = useMemo(() => seatMap(d.guests), [d.guests])
   const visible = useMemo(() => d.layout.items.filter((i) => !hidden.includes(i.layer)), [d.layout.items, hidden])
   const ordered = useMemo(() => {
-    const order = ['structure', 'furniture', 'decor']
-    return [...visible].sort((a, b) => order.indexOf(a.layer) - order.indexOf(b.layer))
+    return drawOrder(visible)
   }, [visible])
   const issues = useMemo(() => clearanceIssues(d.layout.items), [d.layout.items])
-  const warnIds = useMemo(() => new Set(issues.flatMap((i) => [i.a, i.b])), [issues])
+  // A pole clash is the furniture's problem — tinting a whole marquee red would hide everything inside.
+  const warnIds = useMemo(() => new Set(issues.flatMap((i) => (i.kind === 'pole' ? [i.a] : [i.a, i.b]))), [issues])
   const selItems = d.layout.items.filter((i) => selected.includes(i.id))
 
   // Track canvas size; fit on first show.
@@ -324,12 +325,24 @@ export const Canvas = () => {
         // Deck stages grow and shrink a whole deck at a time.
         const decks = o.decks ? decksForSize(w, h, o.decks.turned) : null
         if (decks) ({ w, h } = stageSize(decks))
+        // Marquees come in standard spans and whole bays.
+        if (o.tent) {
+          const def = TENT_TYPES[o.tent.type]
+          if (def.widths) w = def.widths.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a))
+          if (o.tent.type === 'tipi') h = w
+          else if (o.tent.bay) h = Math.max(1, Math.round(h / o.tent.bay)) * o.tent.bay
+        }
         const c = toWorld(o, { x: anchor.x + (dr.sx * w) / 2, y: anchor.y + (dr.sy * h) / 2 })
         update((d) => {
           const i = d.layout.items.find((x) => x.id === dr.id)
           if (!i) return
           Object.assign(i, { w, h, x: c.x, y: c.y })
           if (decks) i.decks = decks
+          if (i.tent) {
+            i.tent.ridge = +TENT_TYPES[i.tent.type].ridge(w).toFixed(1)
+            const s = i.tent.siteId ? d.site.items.find((x) => x.id === i.tent!.siteId) : undefined
+            if (s) Object.assign(s, { w, h })
+          }
           if (i.kind === 'banquet-table') i.seats = 2 * Math.max(1, Math.floor(Math.max(w, h) / 0.61))
         }, dr.key)
         return

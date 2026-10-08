@@ -1,7 +1,8 @@
 import type { EventDoc, KitEntry, LayoutItem } from '../types/event'
 import { FURNITURE, FURNITURE_BY_KEY, KIND_LABEL } from '../data/furniture'
 import { ASSETS_BY_KEY } from '../data/assets'
-import { isSeating, seatsLocal } from './geometry'
+import { isSeating, seatsLocal, tentPoles, tentWallLength } from './geometry'
+import { tentName } from '../data/tents'
 import { stageKit } from './staging'
 import { convert } from './money'
 
@@ -66,6 +67,14 @@ export const kitRows = (d: EventDoc): KitRow[] => {
   }
   for (const i of d.layout.items) {
     if (SKIP.has(i.kind)) continue
+    if (i.kind === 'tent' && i.tent) {
+      const t = i.tent
+      add(`tent:${t.type}:${+i.w.toFixed(2)}x${+i.h.toFixed(2)}`, tentName(t.type, i.w, i.h))
+      const wall = tentWallLength(i)
+      if (wall) add(`sidewall-${t.walls}`, `Sidewall, ${t.walls === 'clear' ? 'clear' : 'white'} (m)`, Math.round(wall))
+      add('tent-weights', 'Tent weights (one per leg/pole)', tentPoles(i).length)
+      continue
+    }
     const st = stageKit(i)
     if (st) {
       add('stage-deck', 'Stage decks 2.44 × 1.22 m', st.decks)

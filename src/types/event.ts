@@ -28,6 +28,7 @@ export type LayoutKind =
   | 'pillar'
   | 'label'
   | 'asset'
+  | 'tent'
 
 /** A thing on the floor plan. All geometry in metres; x/y is the centre. */
 export interface LayoutItem {
@@ -59,6 +60,30 @@ export interface LayoutItem {
   joined?: [boolean, boolean]
   /** Library key it was placed from (furniture, asset or `kit:<id>`), for pricing and the load list. */
   key?: string
+  /** Marquees: w is the span (width), h the length along the bays. */
+  tent?: TentSpec
+}
+
+export type TentType = 'frame' | 'clearspan' | 'pole' | 'sailcloth' | 'stretch' | 'tipi'
+
+/** A doorway in a tent wall. Sides in the tent's own frame: 0 = −y end, 1 = +x side, 2 = +y end, 3 = −x side. `at` is the offset of its centre from the middle of that side, metres. */
+export interface TentDoor {
+  side: 0 | 1 | 2 | 3
+  at: number
+  w: number
+}
+
+export interface TentSpec {
+  type: TentType
+  /** Bay length, metres (frame/clearspan/pole/sailcloth). Length is always a whole number of bays. */
+  bay: number
+  /** Wall height and peak height, metres — for 3D and sightlines. */
+  eave: number
+  ridge: number
+  walls: 'open' | 'clear' | 'white'
+  doors: TentDoor[]
+  /** The matching marquee on the site map, when linked. */
+  siteId?: ID
 }
 
 export interface AssetRef {

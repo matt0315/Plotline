@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import type { Guest, LayoutItem, Space, VenuePlan, BasePlanPlacement } from '../../types/event'
-import { CHAIR, bbox, footprint, seatsLocal } from '../../lib/geometry'
+import { CHAIR, bbox, footprint, seatsLocal, tentPoles, POLE_R } from '../../lib/geometry'
+import { tentName } from '../../data/tents'
 import { KIND_LABEL } from '../../data/furniture'
 import { initials, seatKey } from '../../lib/derived'
 import { deckDims } from '../../lib/staging'
@@ -54,6 +55,97 @@ const labelFor = (i: LayoutItem) => {
 /** Keeps text upright however the item is rotated. */
 const Upright = ({ rotation, children }: { rotation: number; children: React.ReactNode }) => <g transform={`rotate(${-rotation})`}>{children}</g>
 
+const WALL_STYLE = {
+  open: { stroke: '#94a3b8', width: 0.05, dash: '0.35 0.25' },
+  clear: { stroke: '#38bdf8', width: 0.09, dash: undefined },
+  white: { stroke: '#334155', width: 0.11, dash: undefined },
+} as const
+
+/** Side segments of a rectangle tent with doorway gaps cut out. Sides: 0 −y, 1 +x, 2 +y, 3 −x. */
+const wallSegments = (w: number, h: number, doors: NonNullable<LayoutItem['tent']>['doors']) => {
+  const sides: [number, number, number, number, number][] = [
+    [-w / 2, -h / 2, w / 2, -h / 2, w],
+    [w / 2, -h / 2, w / 2, h / 2, h],
+    [-w / 2, h / 2, w / 2, h / 2, w],
+    [-w / 2, -h / 2, -w / 2, h / 2, h],
+  ]
+  return sides.flatMap(([x1, y1, x2, y2, len], side) => {
+    const gaps = doors
+      .filter((d) => d.side === side)
+      .map((d) => [len / 2 + d.at - d.w / 2, len / 2 + d.at + d.w / 2] as const)
+      .sort((a, b) => a[0] - b[0])
+    const out: [number, number, number, number][] = []
+    let from = 0
+    for (const [a, b] of gaps) {
+      if (a > from) out.push([from, a, 0, 0])
+      from = Math.max(from, b)
+    }
+    if (from < len) out.push([from, len, 0, 0])
+    const at = (t: number) => [x1 + ((x2 - x1) * t) / len, y1 + ((y2 - y1) * t) / len]
+    return out.map(([a, b]) => [...at(a), ...at(b)] as [number, number, number, number])
+  })
+}
+
+/** A marquee: canopy outline in its wall style, bay lines, doorways and poles. */
+const TentShape = ({ item }: { item: LayoutItem }) => {
+  const t = item.tent!
+  const { w, h } = item
+  const style = WALL_STYLE[t.walls]
+  const poles = tentPoles(item)
+  let outline: React.ReactNode
+  if (t.type === 'tipi') outline = <circle r={w / 2} fill="#fffbeb" fillOpacity={0.55} stroke={style.stroke} strokeWidth={style.width} strokeDasharray={style.dash} />
+  else if (t.type === 'sailcloth') {
+    const r = w / 2
+    const s = Math.max(0, h / 2 - r)
+    outline = <path d={`M ${-r} ${-s} L ${-r} ${s} A ${r} ${r} 0 0 0 ${r} ${s} L ${r} ${-s} A ${r} ${r} 0 0 0 ${-r} ${-s} Z`} fill="#fffbeb" fillOpacity={0.55} stroke={style.stroke} strokeWidth={style.width} strokeDasharray={style.dash} />
+  } else if (t.type === 'stretch') {
+    const k = Math.min(w, h) * 0.08
+    outline = (
+      <path
+        d={`M ${-w / 2} ${-h / 2} Q 0 ${-h / 2 + k} ${w / 2} ${-h / 2} Q ${w / 2 - k} 0 ${w / 2} ${h / 2} Q 0 ${h / 2 - k} ${-w / 2} ${h / 2} Q ${-w / 2 + k} 0 ${-w / 2} ${-h / 2} Z`}
+        fill="#f5f5f4"
+        fillOpacity={0.55}
+        stroke={style.stroke}
+        strokeWidth={style.width}
+        strokeDasharray={style.dash}
+      />
+    )
+  } else
+    outline = (
+      <>
+        <rect x={-w / 2} y={-h / 2} width={w} height={h} fill="#f8fafc" fillOpacity={0.55} />
+        <g stroke={style.stroke} strokeWidth={style.width} strokeDasharray={style.dash} strokeLinecap="square">
+          {wallSegments(w, h, t.doors).map(([x1, y1, x2, y2], i) => (
+            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />
+          ))}
+        </g>
+      </>
+    )
+  // Bay lines across the roof (frame, clearspan, pole tents).
+  const bays: React.ReactNode[] = []
+  if (t.bay && (t.type === 'frame' || t.type === 'clearspan' || t.type === 'pole')) {
+    const n = Math.round(h / t.bay)
+    for (let k = 1; k < n; k++) bays.push(<line key={k} x1={-w / 2} x2={w / 2} y1={-h / 2 + (h * k) / n} y2={-h / 2 + (h * k) / n} />)
+  }
+  return (
+    <>
+      {outline}
+      <g stroke="#cbd5e1" strokeWidth={0.02} strokeDasharray="0.12 0.12">
+        {bays}
+        {(t.type === 'frame' || t.type === 'clearspan') && <line x1={0} x2={0} y1={-h / 2} y2={h / 2} />}
+      </g>
+      {poles.map((q, i) => (
+        <circle key={i} cx={q.x} cy={q.y} r={POLE_R} fill="#334155" />
+      ))}
+      <Upright rotation={item.rotation}>
+        <text x={0} y={-(t.type === 'tipi' ? w : h) / 2 - 0.3} textAnchor="middle" fontSize={Math.min(0.42, Math.max(0.22, w * 0.03))} fontWeight={600} fill="#64748b" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+          {item.label || tentName(t.type, w, h)}
+        </text>
+      </Upright>
+    </>
+  )
+}
+
 export const ItemShape = memo(function ItemShape({
   item,
   seats,
@@ -66,6 +158,12 @@ export const ItemShape = memo(function ItemShape({
   highlightSeat?: number
 }) {
   const { w, h, kind } = item
+  if (kind === 'tent' && item.tent)
+    return (
+      <g transform={`translate(${item.x} ${item.y}) rotate(${item.rotation})`}>
+        <TentShape item={item} />
+      </g>
+    )
   const fill = item.color ?? '#fff'
   const label = labelFor(item)
   // Fit the label inside the item: cap by size, then by how long the text is.
@@ -251,6 +349,12 @@ export const Defs = () => (
   </defs>
 )
 
+/** Paint order: marquees under everything, then structure, furniture, décor. */
+export const drawOrder = <T extends Pick<LayoutItem, 'layer' | 'kind'>>(items: T[]) => {
+  const rank = (i: T) => (i.kind === 'tent' ? -1 : ['structure', 'furniture', 'decor'].indexOf(i.layer))
+  return [...items].sort((a, b) => rank(a) - rank(b))
+}
+
 /** Everything's extent, for fitting to screen and export. */
 export const planBounds = (items: LayoutItem[], spaces: Space[], base?: { plan: VenuePlan; placement: BasePlanPlacement }) => {
   const pts = items.flatMap(footprint)
@@ -284,8 +388,7 @@ export const StaticPlan = ({
   const b = planBounds(items, spaces, base)
   const seats = new Map<string, Guest>()
   for (const g of guests) if (g.seat) seats.set(seatKey(g.seat.itemId, g.seat.index), g)
-  const order = ['structure', 'furniture', 'decor']
-  const sorted = [...items].sort((a, c) => order.indexOf(a.layer) - order.indexOf(c.layer))
+  const sorted = drawOrder(items)
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -21,20 +21,22 @@ import {
   Upload,
   Eye,
   EyeOff,
+  Map as MapIcon,
 } from 'lucide-react'
-import type { Layer, LayoutItem } from '../../types/event'
+import type { Layer, LayoutItem, TentType } from '../../types/event'
 import { useEvent, update } from '../../store/event'
 import { usePlan } from '../../store/plans'
 import { KIND_LABEL } from '../../data/furniture'
-import { clearanceIssues, isSeating, chairBlockSize, fmtFt, seatsLocal, WALKWAY_MIN } from '../../lib/geometry'
+import { clearanceIssues, isSeating, chairBlockSize, fmtArea, fmtFt, seatsLocal, tentPoles, tentWallLength, WALKWAY_MIN } from '../../lib/geometry'
+import { TENT_TYPES, tentName, tentSpec } from '../../data/tents'
 import { runOf } from '../../lib/runs'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
 import { STAGE_HEIGHTS, deckDims, isDeckStage, stageKit, stageSize } from '../../lib/staging'
 import { useLayoutView } from './viewStore'
-import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, extendRun, rotateBy } from './layoutActions'
+import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, extendRun, rotateBy, tentToSite } from './layoutActions'
 import { seatGuest } from '../Guests/guestActions'
-import { Button, IconButton, NumberCell, toast } from '../../components/ui'
+import { Button, IconButton, NumberCell, Select, toast } from '../../components/ui'
 
 const SWATCHES = ['#ffffff', '#f1f5f9', '#fef3c7', '#fde68a', '#fed7aa', '#fecdd3', '#fbcfe8', '#ddd6fe', '#c7d2fe', '#bae6fd', '#bbf7d0', '#cbd5e1', '#334155']
 const LAYERS: Layer[] = ['structure', 'furniture', 'decor']
@@ -63,6 +65,143 @@ const edit = (id: string, fn: (i: LayoutItem) => void, key: string) =>
   }, `${key}-${id}`)
 
 /** Stages are sized in whole decks, so plans match the hire stock exactly. */
+/** Edit a marquee and keep its site-map twin (if linked) the same size. */
+const editTent = (id: string, fn: (i: LayoutItem) => void, key: string) =>
+  update((d) => {
+    const i = d.layout.items.find((x) => x.id === id)
+    if (!i?.tent) return
+    fn(i)
+    const s = i.tent.siteId ? d.site.items.find((x) => x.id === i.tent!.siteId) : undefined
+    if (s) Object.assign(s, { w: i.w, h: i.h, rotation: i.rotation, label: i.label || tentName(i.tent.type, i.w, i.h) })
+  }, key)
+
+const SIDES = [
+  { value: '2', label: 'Front' },
+  { value: '1', label: 'Right' },
+  { value: '0', label: 'Back' },
+  { value: '3', label: 'Left' },
+]
+
+const TentControls = ({ item }: { item: LayoutItem }) => {
+  const t = item.tent!
+  const def = TENT_TYPES[t.type]
+  const site = useEvent((s) => (t.siteId ? s.doc!.site.items.find((x) => x.id === t.siteId) : undefined))
+  const bays = t.bay ? Math.max(1, Math.round(item.h / t.bay)) : 0
+  const sideLen = (side: number) => (side % 2 === 0 ? item.w : item.h)
+  const setType = (type: TentType) =>
+    editTent(
+      item.id,
+      (i) => {
+        const nd = TENT_TYPES[type]
+        const w = nd.widths ? nd.widths.reduce((a, b) => (Math.abs(b - i.w) < Math.abs(a - i.w) ? b : a)) : i.w
+        const spec = tentSpec(type, w)
+        i.w = w
+        i.h = type === 'tipi' ? w : spec.bay ? Math.max(1, Math.round(i.h / spec.bay)) * spec.bay : i.h
+        i.tent = { ...spec, walls: i.tent!.walls, doors: i.tent!.doors, siteId: i.tent!.siteId }
+      },
+      'tent-type',
+    )
+  const setWidth = (w: number) =>
+    editTent(
+      item.id,
+      (i) => {
+        i.w = w
+        if (i.tent!.type === 'tipi') i.h = w
+        i.tent!.ridge = +TENT_TYPES[i.tent!.type].ridge(w).toFixed(1)
+      },
+      'tent-w',
+    )
+  return (
+    <div className="space-y-2.5">
+      <Row label="Type">
+        <Select<TentType> value={t.type} options={(Object.keys(TENT_TYPES) as TentType[]).map((k) => ({ value: k, label: TENT_TYPES[k].label }))} onChange={setType} />
+      </Row>
+      <p className="-mt-1 text-[11px] text-slate-500">{def.blurb}</p>
+      <Row label={t.type === 'tipi' ? 'Diameter' : 'Span'}>
+        {def.widths ? (
+          <Select value={String(item.w)} options={def.widths.map((w) => ({ value: String(w), label: `${w} m` }))} onChange={(v) => setWidth(parseFloat(v))} />
+        ) : (
+          <div className="input w-24 p-0">
+            <NumberCell value={item.w} format={(n) => `${n.toFixed(1)} m`} onChange={(n) => setWidth(Math.max(3, Math.min(60, n)))} />
+          </div>
+        )}
+      </Row>
+      {t.type !== 'tipi' &&
+        (t.bay ? (
+          <Row label="Length">
+            <div className="flex items-center gap-1">
+              <IconButton onClick={() => editTent(item.id, (i) => void (i.h = Math.max(1, bays - 1) * t.bay), 'tent-h')}>−</IconButton>
+              <span className="w-24 text-center text-xs tabular-nums">
+                {bays} × {t.bay} m = <strong className="text-sm">{+(bays * t.bay).toFixed(1)} m</strong>
+              </span>
+              <IconButton onClick={() => editTent(item.id, (i) => void (i.h = Math.min(40, bays + 1) * t.bay), 'tent-h')}>+</IconButton>
+            </div>
+          </Row>
+        ) : (
+          <Row label="Length">
+            <div className="input w-24 p-0">
+              <NumberCell value={item.h} format={(n) => `${n.toFixed(1)} m`} onChange={(n) => editTent(item.id, (i) => void (i.h = Math.max(3, Math.min(80, n))), 'tent-h')} />
+            </div>
+          </Row>
+        ))}
+      <Row label="Walls">
+        <div className="inline-flex rounded-lg border border-slate-200 p-0.5 text-xs">
+          {(['open', 'clear', 'white'] as const).map((w) => (
+            <button key={w} onClick={() => editTent(item.id, (i) => void (i.tent!.walls = w), 'tent-walls')} className={`rounded-md px-2 py-1 capitalize ${t.walls === w ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-600'}`}>
+              {w}
+            </button>
+          ))}
+        </div>
+      </Row>
+      {t.type !== 'tipi' && t.walls !== 'open' && (
+        <div className="space-y-1.5">
+          {t.doors.map((door, k) => (
+            <div key={k} className="flex items-center gap-1.5 text-xs">
+              <Select value={String(door.side)} options={SIDES} onChange={(v) => editTent(item.id, (i) => void Object.assign(i.tent!.doors[k], { side: +v, at: 0 }), `door-${k}`)} />
+              <Select value={String(door.w)} options={['1.5', '2', '3', '4', '5'].map((w) => ({ value: w, label: `${w} m` }))} onChange={(v) => editTent(item.id, (i) => void (i.tent!.doors[k].w = +v), `door-${k}`)} />
+              <input
+                type="range"
+                className="min-w-0 flex-1 accent-brand-600"
+                min={-(sideLen(door.side) - door.w) / 2}
+                max={(sideLen(door.side) - door.w) / 2}
+                step={0.5}
+                value={door.at}
+                onChange={(e) => editTent(item.id, (i) => void (i.tent!.doors[k].at = +e.target.value), `door-at-${k}`)}
+              />
+              <IconButton onClick={() => editTent(item.id, (i) => void i.tent!.doors.splice(k, 1), 'door-del')} aria-label="Remove doorway">
+                <X size={14} />
+              </IconButton>
+            </div>
+          ))}
+          <Button size="sm" className="w-full" onClick={() => editTent(item.id, (i) => void i.tent!.doors.push({ side: 2, at: 0, w: Math.min(3, item.w) }), 'door-add')}>
+            <Plus size={14} /> Add a doorway
+          </Button>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs text-slate-500">
+          Wall height
+          <div className="input mt-1 p-0">
+            <NumberCell value={t.eave} format={(n) => `${n.toFixed(1)} m`} onChange={(n) => editTent(item.id, (i) => void (i.tent!.eave = Math.max(1, Math.min(12, n))), 'tent-eave')} />
+          </div>
+        </label>
+        <label className="text-xs text-slate-500">
+          Peak height
+          <div className="input mt-1 p-0">
+            <NumberCell value={t.ridge} format={(n) => `${n.toFixed(1)} m`} onChange={(n) => editTent(item.id, (i) => void (i.tent!.ridge = Math.max(i.tent!.eave, Math.min(20, n))), 'tent-ridge')} />
+          </div>
+        </label>
+      </div>
+      <p className="text-[11px] text-slate-500">
+        {fmtArea(t.type === 'tipi' ? Math.PI * (item.w / 2) ** 2 : item.w * item.h)} · {tentPoles(item).length} legs/poles{tentWallLength(item) ? ` · ${Math.round(tentWallLength(item))} m of wall` : ''}
+      </p>
+      <Button size="sm" className="w-full" onClick={() => tentToSite(item.id)}>
+        <MapIcon size={14} /> {site ? 'On the site map — update it' : 'Show on the site map'}
+      </Button>
+    </div>
+  )
+}
+
 const StageControls = ({ item }: { item: LayoutItem }) => {
   const d = item.decks!
   const kit = stageKit(item)!
@@ -174,7 +313,7 @@ const Single = ({ item }: { item: LayoutItem }) => {
 
   return (
     <>
-      <Section title={item.asset?.name ?? (item.joinable ? 'Trestle' : KIND_LABEL[item.kind])}>
+      <Section title={item.tent ? tentName(item.tent.type, item.w, item.h) : (item.asset?.name ?? (item.joinable ? 'Trestle' : KIND_LABEL[item.kind]))}>
         <input ref={label} className="input" placeholder="Label" value={item.label} onChange={(e) => edit(item.id, (i) => void (i.label = e.target.value), 'label')} />
         {item.kind === 'chair-block' ? (
           <div className="grid grid-cols-2 gap-2">
@@ -233,6 +372,7 @@ const Single = ({ item }: { item: LayoutItem }) => {
         )}
         {isDeckStage(item) && <StageControls item={item} />}
         {item.joinable && <RunControls item={item} />}
+        {item.kind === 'tent' && item.tent && <TentControls item={item} />}
         {item.kind === 'asset' && (
           <Row label="Height">
             <div className="input w-24 p-0">
@@ -240,7 +380,7 @@ const Single = ({ item }: { item: LayoutItem }) => {
             </div>
           </Row>
         )}
-        {item.kind !== 'chair-block' && !isDeckStage(item) && (
+        {item.kind !== 'chair-block' && item.kind !== 'tent' && !isDeckStage(item) && (
           <div className="grid grid-cols-2 gap-2">
             <label className="text-xs text-slate-500">
               {item.kind === 'round-table' || item.kind === 'cocktail-table' ? 'Diameter (m)' : 'Width (m)'}
@@ -287,7 +427,7 @@ const Single = ({ item }: { item: LayoutItem }) => {
             <span className="w-9 text-right text-xs tabular-nums">{Math.round(item.rotation)}°</span>
           </div>
         </Row>
-        {item.kind !== 'label' && (
+        {item.kind !== 'label' && item.kind !== 'tent' && (
           <Row label="Colour">
             <div className="flex flex-wrap gap-1">
               {SWATCHES.map((c) => (
@@ -442,6 +582,8 @@ const Nothing = ({ onImport }: { onImport: () => void }) => {
                       ? `${name(x.b)} blocks ${name(x.a)}`
                       : x.kind === 'overlap'
                         ? `${name(x.a)} overlaps ${name(x.b)}`
+                        : x.kind === 'pole'
+                          ? `${name(x.a)} sits on a pole of ${name(x.b)}`
                         : `${name(x.a)} ↔ ${name(x.b)}: ${x.gap.toFixed(2)} m gap (min ${WALKWAY_MIN} m)`}
                   </span>
                 </button>

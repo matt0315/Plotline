@@ -1,6 +1,7 @@
 import type { KitEntry, LayoutItem } from '../types/event'
 import { FURNITURE, FURNITURE_BY_KEY, type FurnitureDef } from './furniture'
 import { ASSETS, ASSETS_BY_KEY, type AssetDef } from './assets'
+import { TENT_PRESETS, TENT_TYPES, tentName } from './tents'
 
 /** Everything the Library panel offers, in one shape. */
 export interface LibEntry {
@@ -12,7 +13,7 @@ export interface LibEntry {
   /** Height in metres when known (3D, sightlines). */
   z?: number
   tags: string
-  source: 'furniture' | 'asset' | 'kit'
+  source: 'furniture' | 'asset' | 'kit' | 'tent'
 }
 
 export const KIT_GROUP = 'Your kit'
@@ -21,6 +22,7 @@ export const LIBRARY_GROUPS = [
   KIT_GROUP,
   'Tables',
   'Seating',
+  'Marquees & structures',
   'Staging',
   'Entertainment',
   'AV & lighting',
@@ -48,7 +50,18 @@ const fromAsset = (a: AssetDef): LibEntry => ({ key: a.key, name: a.name, group:
 export const kitKey = (id: string) => `kit:${id}`
 const fromKit = (k: KitEntry): LibEntry => ({ key: kitKey(k.id), name: k.name, group: KIT_GROUP, w: k.w, h: k.d, z: k.z, tags: `${k.group} ${k.notes ?? ''}`, source: 'kit' })
 
-export const BUILT_IN: LibEntry[] = [...FURNITURE.map(fromFurniture), ...ASSETS.map(fromAsset)]
+const TENTS: LibEntry[] = TENT_PRESETS.map(([key, type, w, h]) => ({
+  key,
+  name: tentName(type, w, h),
+  group: 'Marquees & structures',
+  w,
+  h,
+  z: +TENT_TYPES[type].ridge(w).toFixed(1),
+  tags: `marquee tent ${type} ${TENT_TYPES[type].blurb}`,
+  source: 'tent',
+}))
+
+export const BUILT_IN: LibEntry[] = [...TENTS, ...FURNITURE.map(fromFurniture), ...ASSETS.map(fromAsset)]
 
 /** The full library: your own kit items first, then the built-in catalogue. Priced library items stay where they are. */
 export const libraryWith = (kit: KitEntry[]): LibEntry[] => [...kit.filter((k) => !k.libraryKey).map(fromKit), ...BUILT_IN]

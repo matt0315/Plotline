@@ -1,6 +1,7 @@
 import type { LayoutItem } from '../../types/event'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
 import { ASSETS_BY_KEY } from '../../data/assets'
+import { TENT_PRESETS_BY_KEY, tentName, tentSpec } from '../../data/tents'
 import { kitKey } from '../../data/library'
 import { kitEntries } from '../../lib/kit'
 import { nextInRun, runOf } from '../../lib/runs'
@@ -27,6 +28,11 @@ export const makeItem = (key: string, x: number, y: number): LayoutItem => {
       height: k.z,
       asset: { kitId: k.id, name: k.name, shape: k.shape, icon: k.icon },
     }
+  }
+  const tp = TENT_PRESETS_BY_KEY[key]
+  if (tp) {
+    const [, type, w, h] = tp
+    return { ...base, kind: 'tent', w, h, label: '', seats: 0, layer: 'structure', tent: tentSpec(type, w) }
   }
   const a = ASSETS_BY_KEY[key]
   if (a)
@@ -187,3 +193,18 @@ export const addTablesForShortfall = () => {
   useLayoutView.getState().select(made.map((m) => m.id))
   return n
 }
+
+/** Put a marquee on the satellite site map (or update the one it's linked to), at the venue. */
+export const tentToSite = (id: string) =>
+  update((d) => {
+    const it = d.layout.items.find((i) => i.id === id)
+    if (!it?.tent) return
+    const label = it.label || tentName(it.tent.type, it.w, it.h)
+    const linked = it.tent.siteId ? d.site.items.find((x) => x.id === it.tent!.siteId) : undefined
+    if (linked) Object.assign(linked, { w: it.w, h: it.h, rotation: it.rotation, label })
+    else {
+      const siteId = uid('x')
+      d.site.items.push({ id: siteId, kind: 'marquee', lat: d.venue.lat, lng: d.venue.lng, w: it.w, h: it.h, rotation: it.rotation, label, color: '#f8fafc' })
+      it.tent.siteId = siteId
+    }
+  })

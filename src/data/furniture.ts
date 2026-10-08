@@ -108,4 +108,5 @@ export const KIND_LABEL: Record<LayoutKind, string> = {
   pillar: 'Pillar',
   label: 'Label',
   asset: 'Item',
+  tent: 'Marquee',
 }
