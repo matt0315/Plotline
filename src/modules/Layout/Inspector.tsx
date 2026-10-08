@@ -29,6 +29,7 @@ import { usePlan } from '../../store/plans'
 import { KIND_LABEL } from '../../data/furniture'
 import { clearanceIssues, isSeating, chairBlockSize, fmtArea, fmtFt, seatsLocal, tentPoles, tentWallLength, WALKWAY_MIN } from '../../lib/geometry'
 import { TENT_TYPES, tentName, tentSpec } from '../../data/tents'
+import { zones } from '../../lib/capacity'
 import { runOf } from '../../lib/runs'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
@@ -535,6 +536,35 @@ const Multi = ({ items }: { items: LayoutItem[] }) => {
   )
 }
 
+/** Each room and marquee: seats now, rough capacity by layout, and whether the exits cover the people in it. */
+const CapacitySection = () => {
+  const d = useEvent((s) => s.doc!)
+  const list = zones(d)
+  if (!list.length) return null
+  return (
+    <Section title="Capacity guide">
+      <ul className="space-y-3">
+        {list.map((z) => (
+          <li key={z.id} className="text-xs text-slate-600">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="truncate font-medium text-slate-800">{z.name}</span>
+              <span className="shrink-0 text-slate-400">{fmtArea(z.area)}</span>
+            </div>
+            <div className="mt-0.5">
+              {z.seated} seated · fits about {z.capacity.map((c) => `${c.people} ${c.label.toLowerCase()}`).join(', ')}
+            </div>
+            <div className={`mt-0.5 flex items-start gap-1 ${z.short ? 'text-amber-700' : 'text-emerald-700'}`}>
+              {z.short ? <AlertTriangle size={12} className="mt-px shrink-0" /> : null}
+              {z.short ?? (z.seated ? `Exits OK · ${z.exits.count} × ${z.exits.width.toFixed(1)} m for ${z.seated}` : `${z.exits.count} exit${z.exits.count === 1 ? '' : 's'} marked`)}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] text-slate-400">A planning guide (banquet 1.2 m², theatre 0.7 m², cocktail 0.5 m² per person; 5 mm of exit per person). Your venue licence and local code decide the real numbers.</p>
+    </Section>
+  )
+}
+
 const Nothing = ({ onImport }: { onImport: () => void }) => {
   const d = useEvent((s) => s.doc)!
   const { hidden, set, showSeats } = useLayoutView()
@@ -594,6 +624,8 @@ const Nothing = ({ onImport }: { onImport: () => void }) => {
           <p className="text-xs text-emerald-700">Walkways and exits are clear.</p>
         )}
       </Section>
+
+      <CapacitySection />
 
       <Section title="Venue drawing">
         {plan && d.layout.basePlan ? (

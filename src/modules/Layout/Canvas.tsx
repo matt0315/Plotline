@@ -4,6 +4,7 @@ import { useEvent, update, doc as getDoc } from '../../store/event'
 import { usePlan, savePlan, usePlans } from '../../store/plans'
 import { snapToRun } from '../../lib/runs'
 import { TENT_TYPES } from '../../data/tents'
+import { regionFor, regionPoly } from '../../lib/fill'
 import { clearanceIssues, footprint, hitTest, isRound, pointInPoly, rotate, snap as snapTo, toLocal, toWorld, fmtM, fmtFt, type Pt } from '../../lib/geometry'
 import { seatMap } from '../../lib/derived'
 import { FURNITURE_BY_KEY } from '../../data/furniture'
@@ -20,6 +21,7 @@ type Drag =
   | { mode: 'resize'; id: string; key: string; orig: LayoutItem; sx: number; sy: number }
   | { mode: 'pan'; startClient: Pt; origView: View }
   | { mode: 'marquee'; start: Pt; now: Pt; additive: boolean }
+  | { mode: 'fillrect'; start: Pt; now: Pt }
   | { mode: 'measure'; start: Pt }
   | { mode: 'moveplan'; start: Pt; orig: Pt; key: string }
   | { mode: 'pinch'; startDist: number; startMid: Pt; origView: View }
@@ -66,7 +68,7 @@ const parseLength = (s: string): number | null => {
 export const Canvas = () => {
   const d = useEvent((s) => s.doc)!
   const readOnly = useEvent((s) => s.readOnly)
-  const { view, size, selected, tool, snap, hidden, showSeats, measure, set, select } = useLayoutView()
+  const { view, size, selected, tool, snap, hidden, showSeats, measure, set, select, fill, fillPreview } = useLayoutView()
   const basePlan = d.layout.basePlan
   const plan = usePlan(basePlan?.planId)
   const wrap = useRef<HTMLDivElement>(null)
@@ -160,6 +162,7 @@ export const Canvas = () => {
       else if (e.key.toLowerCase() === 'v' && !mod) set({ tool: 'select' })
       else if (e.key.toLowerCase() === 'h' && !mod) set({ tool: 'pan' })
       else if (e.key.toLowerCase() === 'm' && !mod) set({ tool: 'measure' })
+      else if (e.key.toLowerCase() === 'f' && !mod && !readOnly) set({ tool: 'fill', fill: null, fillPreview: [] })
       else if (e.key === '0' && mod) (e.preventDefault(), fitView())
       else if (e.key.startsWith('Arrow') && sel.length) {
         e.preventDefault()
@@ -217,6 +220,13 @@ export const Canvas = () => {
         const [sx, sy] = handle.split(',').map(Number)
         drag.current = { mode: 'resize', id: it.id, key, orig: { ...it }, sx, sy }
       }
+      return
+    }
+
+    // Fill: drag out an area, or click inside a marquee or room.
+    if (tool === 'fill' && !readOnly) {
+      drag.current = { mode: 'fillrect', start: p, now: p }
+      setMarquee({ a: p, b: p })
       return
     }
 
@@ -348,6 +358,7 @@ export const Canvas = () => {
         return
       }
       case 'marquee':
+      case 'fillrect':
         dr.now = p
         setMarquee({ a: dr.start, b: p })
         return
@@ -385,6 +396,19 @@ export const Canvas = () => {
       select(dr.additive ? [...new Set([...selected, ...inBox])] : inBox)
     }
     if (dr.mode === 'measure' && tool === 'calibrate') calibrate()
+    if (dr.mode === 'fillrect') {
+      setMarquee(null)
+      const w = Math.abs(dr.now.x - dr.start.x)
+      const h = Math.abs(dr.now.y - dr.start.y)
+      if (w > 1.5 && h > 1.5) return set({ fill: { x: (dr.start.x + dr.now.x) / 2, y: (dr.start.y + dr.now.y) / 2, w, h, rotation: 0 } })
+      // A click: the marquee or room under it.
+      const items = getDoc().layout.items
+      const tent = [...items].reverse().find((i) => i.kind === 'tent' && pointInPoly(dr.start, regionPoly(regionFor(i))))
+      if (tent) return set({ fill: regionFor(tent) })
+      const room = getDoc().layout.spaces.find((sp) => Math.abs(dr.start.x - sp.x) <= sp.w / 2 && Math.abs(dr.start.y - sp.y) <= sp.h / 2)
+      if (room) return set({ fill: { x: room.x, y: room.y, w: room.w, h: room.h, rotation: 0 } })
+      toast('Drag out an area, or click inside a marquee or room')
+    }
   }
 
   const calibrate = async () => {
@@ -483,6 +507,18 @@ export const Canvas = () => {
             .map((i) => (
               <polygon key={`w-${i.id}`} points={footprint(i).map((q) => `${q.x},${q.y}`).join(' ')} fill="#ef4444" fillOpacity={0.06} stroke="#ef4444" strokeWidth={1.5 * px} strokeDasharray={`${4 * px} ${3 * px}`} style={{ pointerEvents: 'none' }} />
             ))}
+
+          {/* Fill preview: the area and the layout it would place */}
+          {fill && (
+            <g style={{ pointerEvents: 'none' }}>
+              <polygon points={regionPoly(fill).map((q) => `${q.x},${q.y}`).join(' ')} fill="#6366f1" fillOpacity={0.05} stroke="#6366f1" strokeWidth={px * 1.5} strokeDasharray={`${px * 6} ${px * 4}`} />
+              <g opacity={0.55}>
+                {fillPreview.map((i) => (
+                  <ItemShape key={i.id} item={i} />
+                ))}
+              </g>
+            </g>
+          )}
 
           {/* Selection */}
           {selItems.map((i) => (

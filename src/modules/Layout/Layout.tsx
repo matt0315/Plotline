@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { MousePointer2, Hand, Ruler, Magnet, ZoomIn, ZoomOut, Maximize2, Plus, Users, SlidersHorizontal, Upload, FileDown, X, AlertTriangle } from 'lucide-react'
+import { MousePointer2, Hand, Ruler, Magnet, ZoomIn, ZoomOut, Maximize2, Plus, Users, SlidersHorizontal, Upload, FileDown, X, AlertTriangle, Grid2x2Plus } from 'lucide-react'
 import { useEvent } from '../../store/event'
 import { clearanceIssues } from '../../lib/geometry'
 import { seatingStats } from '../../lib/derived'
@@ -7,6 +7,7 @@ import { Canvas, fitView, zoomBy } from './Canvas'
 import { Library } from './Library'
 import { Inspector } from './Inspector'
 import { GuestDock } from './GuestDock'
+import { FillPanel } from './FillPanel'
 import { useLayoutView, type Tool } from './viewStore'
 import { IconButton, Button } from '../../components/ui'
 
@@ -16,16 +17,18 @@ const TOOLS: { id: Tool; icon: React.ReactNode; label: string }[] = [
   { id: 'select', icon: <MousePointer2 size={16} />, label: 'Select (V)' },
   { id: 'pan', icon: <Hand size={16} />, label: 'Pan (H or hold Space)' },
   { id: 'measure', icon: <Ruler size={16} />, label: 'Measure (M)' },
+  { id: 'fill', icon: <Grid2x2Plus size={16} />, label: 'Fill an area with tables (F)' },
 ]
 
 const HINTS: Partial<Record<Tool, string>> = {
   calibrate: 'Drag along a wall or dimension you know the real length of',
   moveplan: 'Drag to line the venue drawing up with your room',
   measure: 'Drag to measure · hold Shift to keep it straight',
+  fill: 'Drag out an area, or click inside a marquee or room, to fill it',
 }
 
 export default function Layout() {
-  const { tool, snap, view, panel, set, armed } = useLayoutView()
+  const { tool, snap, view, panel, set, armed, fill } = useLayoutView()
   const d = useEvent((s) => s.doc)!
   const readOnly = useEvent((s) => s.readOnly)
   const [importing, setImporting] = useState(false)
@@ -68,7 +71,7 @@ export default function Layout() {
           )}
           <div className="mx-0.5 h-5 w-px bg-slate-200" />
           {TOOLS.map((t) => (
-            <IconButton key={t.id} title={t.label} active={tool === t.id} onClick={() => set({ tool: t.id, measure: null })}>
+            <IconButton key={t.id} title={t.label} active={tool === t.id} onClick={() => set({ tool: t.id, measure: null, fill: null, fillPreview: [] })}>
               {t.icon}
             </IconButton>
           ))}
@@ -111,10 +114,12 @@ export default function Layout() {
           </IconButton>
         </div>
 
-        {(HINTS[tool] || armedGuest) && (
+        <FillPanel />
+
+        {((HINTS[tool] && !(tool === 'fill' && fill)) || armedGuest) && (
           <div className="absolute bottom-16 left-1/2 flex max-w-[92%] -translate-x-1/2 items-center gap-2 rounded-full bg-slate-900 py-1.5 pr-1.5 pl-4 text-xs text-white shadow-lg sm:bottom-4">
             {armedGuest ? `Tap a table to seat ${armedGuest.name}` : HINTS[tool]}
-            <button onClick={() => set({ tool: 'select', measure: null, armed: null })} className="rounded-full bg-white/15 px-2.5 py-1 hover:bg-white/25">
+            <button onClick={() => set({ tool: 'select', measure: null, armed: null, fill: null, fillPreview: [] })} className="rounded-full bg-white/15 px-2.5 py-1 hover:bg-white/25">
               {tool === 'measure' ? 'Done' : 'Cancel'}
             </button>
           </div>

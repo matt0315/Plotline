@@ -1,7 +1,8 @@
 import { create } from 'zustand'
-import type { Layer } from '../../types/event'
+import type { Layer, LayoutItem } from '../../types/event'
+import { DEFAULT_FILL, type FillOptions, type FillRegion } from '../../lib/fill'
 
-export type Tool = 'select' | 'pan' | 'measure' | 'calibrate' | 'moveplan'
+export type Tool = 'select' | 'pan' | 'measure' | 'calibrate' | 'moveplan' | 'fill'
 
 export interface View {
   /** World coordinate (metres) at the top-left of the canvas. */
@@ -23,6 +24,10 @@ interface LayoutViewState {
   panel: 'inspector' | 'guests' | 'library' | null
   /** Tap-to-seat on touch: a guest waiting for a table tap. */
   armed: string | null
+  /** Fill tool: the area picked, and the ghost layout it would place. */
+  fill: FillRegion | null
+  fillOpts: FillOptions
+  fillPreview: LayoutItem[]
   set: (p: Partial<LayoutViewState>) => void
   select: (ids: string[]) => void
 }
@@ -37,6 +42,9 @@ export const useLayoutView = create<LayoutViewState>((set) => ({
   showSeats: true,
   measure: null,
   armed: null,
+  fill: null,
+  fillOpts: DEFAULT_FILL,
+  fillPreview: [],
   panel: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'inspector' : null,
   set: (p) => set(p),
   select: (selected) => set({ selected }),

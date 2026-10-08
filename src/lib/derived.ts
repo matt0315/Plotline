@@ -1,6 +1,7 @@
 import type { BudgetLine, EventDoc, Guest, Phase } from '../types/event'
 import { formatMoney } from './money'
 import { kitCost, kitRows } from './kit'
+import { egressIssues } from './capacity'
 import { toMinutes } from './time'
 import { crewCost, doubleBookings, openPositions } from './roster'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
@@ -144,6 +145,7 @@ export const nextSteps = (d: EventDoc): { text: string; tab: Tab }[] => {
   if (d.type !== 'festival' && st.capacity < d.guestCount) out.push({ text: `Seats for ${st.capacity} but expecting ${d.guestCount}`, tab: 'layout' })
   const issues = clearanceIssues(d.layout.items)
   if (issues.length) out.push({ text: `${issues.length} spacing issue${issues.length === 1 ? '' : 's'} on the floor plan`, tab: 'layout' })
+  for (const z of egressIssues(d)) out.push({ text: `${z.name}: ${z.short}`, tab: 'layout' })
   const open = d.suppliers.filter((s) => s.status === 'researching' || s.status === 'quoted')
   if (open.length) out.push({ text: `${open.length} supplier${open.length === 1 ? '' : 's'} still to book`, tab: 'suppliers' })
   const b = budgetTotals(d)
