@@ -418,16 +418,23 @@ const Single = ({ item }: { item: LayoutItem }) => {
         )}
         <Row label="Rotation">
           <div className="flex items-center gap-1">
+            {/* 0–360 in 15° steps (359 as the top stopped the last step at 345°); the box takes any angle. */}
             <input
               type="range"
               min={0}
-              max={359}
+              max={360}
               step={15}
               value={item.rotation}
               onChange={(e) => edit(item.id, (i) => void (i.rotation = parseInt(e.target.value)), 'rot')}
-              className="flex-1 accent-brand-600"
+              className="min-w-0 flex-1 accent-brand-600"
             />
-            <span className="w-9 text-right text-xs tabular-nums">{Math.round(item.rotation)}°</span>
+            <div className="input w-16 p-0">
+              <NumberCell
+                value={item.rotation}
+                format={(n) => `${+n.toFixed(1)}°`}
+                onChange={(n) => edit(item.id, (i) => void (i.rotation = n === 360 ? 360 : ((n % 360) + 360) % 360), 'rot')}
+              />
+            </div>
           </div>
         </Row>
         {item.kind !== 'label' && item.kind !== 'tent' && (
