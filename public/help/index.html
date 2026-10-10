@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to use Plotline</title>
+<meta name="description" content="A step-by-step guide to planning your event in Plotline: floor plans, marquees, 3D, seating, table plans, run sheets, suppliers, budget, crew and exports." />
+<link rel="icon" href="/favicon.svg" />
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --ink: #0f172a; --text: #334155; --muted: #64748b; --line: #e2e8f0;
+    --brand: #4f46e5; --brand-soft: #eef2ff; --tip: #ecfdf5; --tip-ink: #065f46; --note: #fffbeb; --note-ink: #92400e;
+    --kbd: #f1f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1120; --card: #111827; --ink: #f1f5f9; --text: #cbd5e1; --muted: #94a3b8; --line: #1f2937;
+      --brand: #818cf8; --brand-soft: #1e1b4b; --tip: #052e24; --tip-ink: #a7f3d0; --note: #2a1f06; --note-ink: #fcd34d; --kbd: #1f2937;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--brand); }
+  header.top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top img { width: 28px; height: 28px; }
+  header.top .name { font-weight: 700; color: var(--ink); }
+  header.top .spacer { flex: 1; }
+  header.top input { width: min(320px, 44vw); padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
+  header.top a.open { white-space: nowrap; padding: 8px 14px; border-radius: 10px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .wrap { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+  nav.toc { position: sticky; top: 84px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; font-size: 14px; }
+  nav.toc a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--muted); text-decoration: none; }
+  nav.toc a:hover, nav.toc a.on { background: var(--brand-soft); color: var(--brand); }
+  nav.toc .group { margin: 14px 10px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  main { min-width: 0; }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; color: var(--ink); letter-spacing: -0.02em; }
+  .hero p { margin: 0; font-size: 18px; color: var(--muted); max-width: 680px; }
+  .quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 28px 0 8px; }
+  .quick a { display: block; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); text-decoration: none; color: var(--text); }
+  .quick a b { display: block; color: var(--ink); margin-bottom: 2px; }
+  .quick a span { font-size: 14px; color: var(--muted); }
+  section { margin-top: 48px; padding-top: 8px; }
+  section h2 { margin: 0 0 12px; font-size: 26px; color: var(--ink); letter-spacing: -0.01em; }
+  section h3 { margin: 26px 0 8px; font-size: 18px; color: var(--ink); }
+  ol, ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 24px; }
+  .tip, .note { border-radius: 12px; padding: 12px 16px; margin: 16px 0; font-size: 15px; }
+  .tip { background: var(--tip); color: var(--tip-ink); }
+  .note { background: var(--note); color: var(--note-ink); }
+  .tip b, .note b { margin-right: 4px; }
+  kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: var(--kbd); color: var(--ink); font: 600 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 12px 0; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 13px; font-weight: 600; }
+  .ui { font-weight: 600; color: var(--ink); }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 700; vertical-align: 2px; }
+  .hidden { display: none !important; }
+  .empty { margin-top: 40px; color: var(--muted); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); padding-top: 20px; }
+    nav.toc { position: static; max-height: none; border: 1px solid var(--line); border-radius: 14px; background: var(--card); padding: 8px; }
+    nav.toc details summary { cursor: pointer; padding: 6px 10px; font-weight: 600; color: var(--ink); }
+    header.top .name { display: none; }
+    .card { padding: 16px; }
+  }
+  @media print {
+    header.top, nav.toc, .quick { display: none; }
+    .wrap { display: block; }
+    section { break-inside: avoid-page; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <img src="/favicon.svg" alt="" />
+  <span class="name">Plotline help</span>
+  <span class="spacer"></span>
+  <input id="q" type="search" placeholder="Search the guide…" aria-label="Search the guide" />
+  <a class="open" href="/">Open Plotline</a>
+</header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <details open>
+      <summary>Contents</summary>
+      <div class="group">Start here</div>
+      <a href="#start">Plan your first event</a>
+      <a href="#workspace">Finding your way around</a>
+      <div class="group">Floor plan</div>
+      <a href="#floor">Building the floor plan</a>
+      <a href="#library">The library, your kit &amp; requests</a>
+      <a href="#trestles">Long tables from trestles</a>
+      <a href="#marquees">Marquees &amp; tents</a>
+      <a href="#fill">Fill an area</a>
+      <a href="#checks">Spacing, exits &amp; capacity</a>
+      <a href="#3d">3D, walk-through &amp; view from a seat</a>
+      <a href="#drawings">Venue drawings</a>
+      <div class="group">The rest of your event</div>
+      <a href="#site">Site map</a>
+      <a href="#guests">Guests &amp; seating</a>
+      <a href="#tableplan">Table plans &amp; place cards</a>
+      <a href="#run">Run sheet</a>
+      <a href="#suppliers">Suppliers</a>
+      <a href="#budget">Budget &amp; currency</a>
+      <a href="#docs">Docs &amp; forms</a>
+      <a href="#crew">Crew roster</a>
+      <div class="group">Sharing &amp; your account</div>
+      <a href="#export">Exporting &amp; sharing</a>
+      <a href="#plans">Free &amp; Pro</a>
+      <a href="#shortcuts">Keyboard shortcuts</a>
+      <a href="#faq">Questions</a>
+    </details>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>How to use Plotline</h1>
+      <p>Plotline keeps your whole event in one place: floor plan, site map, guests and seating, run sheet, suppliers, budget, forms and crew. Change something in one place and everything linked to it updates. This guide walks you through each part.</p>
+    </div>
+
+    <div class="quick">
+      <a href="#start"><b>New here?</b><span>Plan your first event in about a minute</span></a>
+      <a href="#floor"><b>Floor plans</b><span>Tables, staging, marquees, fill an area</span></a>
+      <a href="#3d"><b>See it in 3D</b><span>Walk through it, or sit in a guest’s seat</span></a>
+      <a href="#tableplan"><b>Table plans</b><span>Print a find-your-seat board in nice fonts</span></a>
+    </div>
+
+    <section id="start" data-s>
+      <h2>Plan your first event</h2>
+      <p>You don’t need an account to start. Your first event is saved in your browser as you go.</p>
+      <ol>
+        <li>Open <a href="/">plotlineapp.online</a>.</li>
+        <li>Answer four questions: <span class="ui">what kind of event</span> (wedding, corporate, festival or party), <span class="ui">how many guests</span>, <span class="ui">when</span>, and <span class="ui">where</span>. Start typing the venue name or address and pick it from the list.</li>
+        <li>Check <span class="ui">Budget in</span>. Plotline picks your local currency, but you can change it.</li>
+        <li>Press <span class="ui">Build my plan</span>.</li>
+      </ol>
+      <p>You get a complete first draft:</p>
+      <ul>
+        <li>a floor plan with tables spaced for service and access;</li>
+        <li>a timed run sheet;</li>
+        <li>a budget with typical costs for your size;</li>
+        <li>a supplier checklist linked to the budget;</li>
+        <li>safety forms and a suggested crew roster.</li>
+      </ul>
+      <p>Edit any of it from there. If you’d rather begin with nothing, choose <span class="ui">or start blank</span> instead.</p>
+      <div class="tip"><b>Tip:</b> the <span class="ui">Overview</span> tab has a <span class="ui">What’s next</span> list. It always shows the most useful thing to do next, such as unseated guests, spacing problems, suppliers still to book or crew shifts to fill.</div>
+    </section>
+
+    <section id="workspace" data-s>
+      <h2>Finding your way around</h2>
+      <ul>
+        <li><b>Tabs.</b> They run down the left on a computer and along the bottom on a phone: Overview, Floor plan, Site map, Guests, Run sheet, Suppliers, Budget, Docs and Crew.</li>
+        <li><b>Top bar.</b> It shows your budget position, how many seats you have, whether your work is saved, <span class="ui">Undo</span>/<span class="ui">Redo</span>, <span class="ui">Search</span>, <span class="ui">Feedback</span>, <span class="ui">Share</span> and <span class="ui">Export pack</span>.</li>
+        <li><b>Search (<kbd>⌘</kbd> <kbd>K</kbd>, or <kbd>Ctrl</kbd> <kbd>K</kbd> on Windows).</b> Jump to any tab, add a guest, table or supplier, find a person, or open the table plan designer. Just start typing.</li>
+        <li><b>Undo anything</b> with <kbd>⌘</kbd> <kbd>Z</kbd>, and redo with <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>Z</kbd>. Dragging something counts as one step.</li>
+        <li><b>Your events.</b> Click the event name at the top to see all your events. Click the Plotline logo to go back to the start page.</li>
+      </ul>
+    </section>
+
+    <section id="floor" data-s>
+      <h2>Building the floor plan</h2>
+      <div class="card">
+        <h3 style="margin-top:0">Add things</h3>
+        <ul>
+          <li>Press <span class="ui">+ Add</span> to open the library. Drag an item onto the plan, or tap it to drop it in the middle of your view.</li>
+          <li>Everything is real size: a 66″ round table is 1.68 m across, and a marquee is its actual span.</li>
+        </ul>
+        <h3>Move, turn and resize</h3>
+        <ul>
+          <li><b>Move:</b> drag an item. It snaps to a 25 cm grid; hold <kbd>Alt</kbd> to place it freely, or turn snapping off with the magnet button.</li>
+          <li><b>Rotate:</b> use the round handle above a selected item. Press <kbd>R</kbd> to rotate 15°, or <kbd>⇧</kbd> <kbd>R</kbd> to go the other way.</li>
+          <li><b>Resize:</b> drag the square corner handles. Stages grow a whole deck at a time, and marquees a whole bay.</li>
+          <li><b>Nudge:</b> use the arrow keys for 10 cm, or <kbd>⇧</kbd> + arrow for 1 m.</li>
+        </ul>
+        <h3>Select several</h3>
+        <ul>
+          <li>Drag a box across empty floor, or <kbd>⇧</kbd>-click items.</li>
+          <li>The <span class="ui">Properties</span> panel can then align them or space them evenly. Duplicate with <kbd>⌘</kbd> <kbd>D</kbd>, or copy and paste with <kbd>⌘</kbd> <kbd>C</kbd> / <kbd>⌘</kbd> <kbd>V</kbd>.</li>
+        </ul>
+        <h3>The Properties panel</h3>
+        <ul>
+          <li>Select an item to change its label, seats, size, colour, layer and rotation.</li>
+          <li>You can also lock an item so it can’t be moved by accident.</li>
+          <li>With nothing selected, the panel shows your seating capacity, spacing problems, sightlines, the capacity guide and your rooms.</li>
+        </ul>
+        <h3>Find your way round the plan</h3>
+        <ul>
+          <li><b>Zoom:</b> scroll, pinch, or use <kbd>⌘</kbd> + scroll.</li>
+          <li><b>Pan:</b> hold <kbd>Space</kbd> and drag, use the hand tool <kbd>H</kbd>, or drag with two fingers.</li>
+          <li><b>See everything:</b> press <kbd>⌘</kbd> <kbd>0</kbd> or the fit button.</li>
+        </ul>
+      </div>
+      <h3>Staging</h3>
+      <p>Stages are built from real 2.44 × 1.22 m (8 × 4 ft) decks: speaker and DJ risers, bridal stages, band stages, presentation stages, main stages and catwalks.</p>
+      <ul>
+        <li>Resize by whole decks and set the leg height (200–1200 mm).</li>
+        <li>The load list counts the decks, legs, stairs and skirting you need, and Plotline warns you when a stage is high enough to usually need handrails.</li>
+      </ul>
+      <h3>Rooms</h3>
+      <p>Your room outline is listed under <span class="ui">Rooms</span> in the Properties panel, where you can rename it and change its width and depth. Add walls, doors, fire exits, pillars and windows from the library.</p>
+      <div class="tip"><b>On a phone:</b> tap <span class="ui">+ Add</span> for the library and the sliders button for Properties. Both open as sheets from the bottom.</div>
+    </section>
+
+    <section id="library" data-s>
+      <h2>The library, your kit &amp; item requests</h2>
+      <p>The library has around 180 items, all at real size:</p>
+      <ul>
+        <li>tables, trestles and seating;</li>
+        <li>staging, AV and lighting;</li>
+        <li>bars and catering;</li>
+        <li>décor, facilities, barriers, games and vehicles;</li>
+        <li>marquees.</li>
+      </ul>
+      <p>Search by name or by what it’s for: “speaker”, “toilet”, “arch” and “heater” all work. Your most recent items appear at the top.</p>
+      <h3>Your kit</h3>
+      <p>Press <span class="ui">Your kit</span> at the top of the library. It has two tabs.</p>
+      <ul>
+        <li><b>This plan:</b> every line on your load list.
+          <ul>
+            <li>Enter how many you <span class="ui">Own</span> and the <span class="ui">Price each</span> to hire.</li>
+            <li>Plotline then shows what you’re <span class="ui">Short</span> and what the floor plan costs.</li>
+            <li>Prices are remembered for every event you plan.</li>
+          </ul>
+        </li>
+        <li><b>Your own items:</b> add your real pieces with their size, shape, colour, icon, how many you own and their price. They appear first in the library and work in 3D, the load list and the budget.</li>
+      </ul>
+      <h3>Can’t find something? Request it</h3>
+      <ol>
+        <li>Press <span class="ui">Request item</span>, or search and choose <span class="ui">Request it</span> when nothing matches.</li>
+        <li>Give it a name, choose a category, and enter its width, depth and height (metres or feet).</li>
+        <li>Add a note and up to three photos. These help us draw it properly.</li>
+        <li>Leave <span class="ui">Add a stand-in</span> ticked. A placeholder at the size you gave goes into your kit and onto your plan straight away, so you can keep planning.</li>
+      </ol>
+    </section>
+
+    <section id="trestles" data-s>
+      <h2>Long tables from trestles</h2>
+      <p>Trestles (1.8 m and 2.4 m) join end to end into one long feasting table.</p>
+      <ul>
+        <li>Drag a trestle near the end of another and it snaps flush. Hold <kbd>Alt</kbd> if you don’t want it to snap.</li>
+        <li>Or select a trestle and press <span class="ui">Add a trestle to the run</span> as many times as you need.</li>
+        <li>Properties shows the whole run, for example “Run of 6 · 14.4 m · 48 seats”.</li>
+        <li>Chairs drop off the ends where trestles meet, so your seat count stays honest.</li>
+      </ul>
+    </section>
+
+    <section id="marquees" data-s>
+      <h2>Marquees &amp; tents</h2>
+      <p>The library’s <span class="ui">Marquees &amp; structures</span> group has frame tents, clearspans, pole tents, sailcloth, stretch tents and tipis in standard sizes. Select a marquee to change:</p>
+      <ul>
+        <li><b>Type and span</b>, from the standard widths.</li>
+        <li><b>Length</b>, in whole bays (for example 4 × 4.5 m = 18 m).</li>
+        <li><b>Walls:</b> open, clear or white. With walls on, use <span class="ui">Add a doorway</span> to choose the side, width and position of each opening.</li>
+        <li><b>Wall and peak heights</b>, which are used in 3D and the sightline check.</li>
+      </ul>
+      <p>Every leg and pole is drawn. Poles are solid, so a table placed on one gets flagged.</p>
+      <p>A marquee is selected by clicking its edge or a pole. That means you can still click the tables inside it.</p>
+      <p>Press <span class="ui">Show on the site map</span> to put the same marquee on the satellite map. It stays the same size if you change it later.</p>
+      <p>The load list counts the tent, the metres of sidewall and the weights.</p>
+    </section>
+
+    <section id="fill" data-s>
+      <h2>Fill an area <span class="pill">F</span></h2>
+      <p>Lay out a whole room or marquee in one go.</p>
+      <ol>
+        <li>Press <kbd>F</kbd>, or the fill button in the toolbar.</li>
+        <li>Drag out an area, or click inside a marquee or room.</li>
+        <li>Choose a layout: <span class="ui">Rounds 60″/66″/72″</span>, <span class="ui">Trestle runs</span>, <span class="ui">Theatre rows</span> or <span class="ui">Cocktail / standing</span>.</li>
+        <li>Choose the spacing between tables: <span class="ui">Comfortable</span> (1.5 m), <span class="ui">Standard</span> (1.2 m) or <span class="ui">Minimum</span> (0.915 m, the narrowest accessible walkway).</li>
+        <li>Check the preview and the count (for example “12 tables · 120 seats”), then press <span class="ui">Place them</span>.</li>
+      </ol>
+      <p>Fill keeps walkways, fire exits, poles and a gap in front of stages and dance floors clear. You can set that gap with <span class="ui">Stage gap</span>.</p>
+    </section>
+
+    <section id="checks" data-s>
+      <h2>Spacing, exits &amp; capacity</h2>
+      <p>Plotline checks your plan as you work. Problems show as a red count in the floor plan toolbar and in the Properties panel, and are listed on Overview.</p>
+      <ul>
+        <li><b>Spacing:</b> tables closer than an accessible walkway (0.915 m / 36 in), anything overlapping, and anything standing on a tent pole.</li>
+        <li><b>Fire exits:</b> anything blocking the clear zone in front of an exit.</li>
+        <li><b>Capacity guide:</b> for each room and marquee, its area, the people seated, and a rough capacity for banquet, theatre, classroom and cocktail layouts.</li>
+        <li><b>Exits for the people seated:</b> how many exits you need for the crowd, and whether the total exit width covers it (5 mm per person). Doorways in marquee walls count, and open-sided marquees count as clear.</li>
+        <li><b>Sightlines:</b> seats whose view of the stage, screen or DJ is blocked. See the 3D section below.</li>
+      </ul>
+      <div class="note"><b>Please note:</b> these checks are a planning guide. Your venue’s licence and your local building and fire codes set the real limits.</div>
+    </section>
+
+    <section id="3d" data-s>
+      <h2>3D, walk-through &amp; view from a seat</h2>
+      <p>On the floor plan, press <span class="ui">3D</span> in the top-right toolbar.</p>
+      <ul>
+        <li><b>Orbit:</b> drag to turn, scroll or pinch to zoom, right-drag to pan.</li>
+        <li><b>Walk:</b> drag to look around, and move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrow keys. Hold <kbd>⇧</kbd> to move faster. On a phone, use the on-screen arrows.</li>
+        <li><b>Light:</b> <span class="ui">Day</span>, <span class="ui">Golden hour</span> (low, warm light with long shadows) or <span class="ui">Night</span>. At night, house lights, stage lighting, uplights, festoons and marquees glow.</li>
+        <li><b>Roofs and walls:</b> <span class="ui">Solid</span>, <span class="ui">Ghost</span> (see-through) or <span class="ui">Hidden</span>.</li>
+        <li><b>PNG</b> saves the current view as a picture for your client.</li>
+        <li><span class="ui">2D plan</span> takes you back.</li>
+      </ul>
+      <h3>See the view from any seat</h3>
+      <p>Press the eye icon next to a seated guest, either in the <span class="ui">Seating</span> panel or in a table’s seat list. Plotline puts you in that chair at seated eye height, looking at the stage, screen, DJ, dance floor or head table, whichever is the main focus.</p>
+      <h3>Sightline check</h3>
+      <p>Plotline looks along every seat’s line of sight. Seats blocked by a pillar, tent pole, wall, speaker, screen or tall décor are:</p>
+      <ul>
+        <li>outlined in amber on the plan;</li>
+        <li>listed under <span class="ui">Sightlines</span> by table, with a <span class="ui">View</span> link to see the problem for yourself.</li>
+      </ul>
+    </section>
+
+    <section id="drawings" data-s>
+      <h2>Venue drawings</h2>
+      <p>Plan on top of the venue’s own floor plan.</p>
+      <ol>
+        <li>On the floor plan, press <span class="ui">Import venue drawing</span> (the upload button).</li>
+        <li>Drop in a DXF or DWG CAD file, a PDF, or a photo of the plan.</li>
+        <li>Set the scale:
+          <ul>
+            <li>DXF files read their units automatically.</li>
+            <li>PDFs can use their printed scale (1:100 and so on).</li>
+            <li>For anything else, draw along one wall whose real length you know.</li>
+          </ul>
+        </li>
+        <li>Under <span class="ui">Venue drawing</span> in the Properties panel, press <span class="ui">Move</span> to line it up with your room, and use the slider to fade it back.</li>
+      </ol>
+      <p>Venues can publish their plan to the venue library, so organisers can find it and plan on it.</p>
+    </section>
+
+    <section id="site" data-s>
+      <h2>Site map</h2>
+      <p>For outdoor and multi-area events, the site map uses real satellite imagery of your venue.</p>
+      <ul>
+        <li>Drag stages, marquees, bars, food trucks, toilets, generators, first aid, entrances and more onto the map. Each is shown at its true size.</li>
+        <li>Draw zones to get their area and perimeter, and measure distances.</li>
+        <li>Marquees linked from the floor plan appear here automatically.</li>
+      </ul>
+    </section>
+
+    <section id="guests" data-s>
+      <h2>Guests &amp; seating</h2>
+      <h3>Add your guests</h3>
+      <ul>
+        <li><b>Paste a list:</b> one person per line, optionally with their group and dietary needs after commas.</li>
+        <li><b>Import</b> a CSV from a spreadsheet. Plotline works out which column is which.</li>
+        <li>Or press <span class="ui">Add guest</span>.</li>
+      </ul>
+      <p>Track each guest’s RSVP, group, dietary needs, email, phone and notes.</p>
+      <h3>Seat them</h3>
+      <ul>
+        <li><b>Auto-seat by group</b> fills tables and keeps groups and plus-ones together.</li>
+        <li>On the floor plan, open the <span class="ui">Seating</span> panel (the people button) and drag guests onto chairs. Dropping a guest onto an occupied chair swaps the two.</li>
+        <li><b>On a phone:</b> tap a guest, then tap the table.</li>
+        <li>Seated chairs show the guest’s initials. Select a table to see who’s sitting where.</li>
+      </ul>
+    </section>
+
+    <section id="tableplan" data-s>
+      <h2>Table plans &amp; place cards</h2>
+      <p>Open <span class="ui">Table plan</span> from the Guests tab, the Seating panel, <span class="ui">Export pack</span> or <kbd>⌘</kbd> <kbd>K</kbd>. You get a live preview of the actual PDF.</p>
+      <h3>Layouts</h3>
+      <ul>
+        <li><span class="ui">Find your seat</span>: guests A–Z with their table, for the entrance board.</li>
+        <li><span class="ui">By table</span>: each table with its guests.</li>
+        <li><span class="ui">Table cards</span>: one or two per page, for the centrepieces.</li>
+        <li><span class="ui">Caterer sheet</span>: every guest by table, with dietary needs highlighted and a summary.</li>
+      </ul>
+      <h3>Style and paper</h3>
+      <ul>
+        <li>Pick a style (Classic, Romantic, Modern, Minimal, Art deco, Garden), or choose the heading font, names font and colour yourself.</li>
+        <li>Paper goes from A4 and Letter up to A1 and 24 × 36″ posters. On a single sheet, the names resize to fit.</li>
+      </ul>
+      <p>Place cards (tent cards to fold) are in <span class="ui">Export pack</span>.</p>
+    </section>
+
+    <section id="run" data-s>
+      <h2>Run sheet</h2>
+      <ul>
+        <li>The day is split into set-up, the event, and pack-down. Overnight builds are fine.</li>
+        <li>Supplier arrival and departure times, and crew shifts on the day, appear automatically.</li>
+        <li>Running late? The up and down arrows on a row move it <b>and everything after it</b> 15 minutes earlier or later, in one go.</li>
+        <li>Crew and supplier work on other days appears under <span class="ui">Before &amp; after the event</span>.</li>
+      </ul>
+    </section>
+
+    <section id="suppliers" data-s>
+      <h2>Suppliers</h2>
+      <ul>
+        <li>Suppliers are grouped by category, with contact details, quote, amount paid, due date and arrival times.</li>
+        <li>Each supplier is linked to its budget line, so quotes and payments flow into the budget.</li>
+        <li><span class="ui">Compare</span> shows the quotes in a category side by side against what you budgeted. Choosing one books it and declines the others.</li>
+      </ul>
+    </section>
+
+    <section id="budget" data-s>
+      <h2>Budget &amp; currency</h2>
+      <ul>
+        <li>The budget shows your target, forecast, committed, paid and still due, plus a breakdown by category. The top bar shows whether you’re over or under.</li>
+        <li><b>Linked lines update themselves:</b> booked supplier quotes, crew hours × rates, and the <span class="ui">Floor-plan kit</span> line.</li>
+        <li>Once your kit prices cover items on the plan, Plotline offers to add that floor-plan kit line for you.</li>
+        <li><b>Currency:</b> choose any of 28 currencies with the <span class="ui">Currency</span> picker on the Budget tab. When you switch, you can convert all your amounts at an approximate rate, or keep the numbers if you’ve already entered them in the new currency.</li>
+      </ul>
+    </section>
+
+    <section id="docs" data-s>
+      <h2>Docs &amp; forms</h2>
+      <ul>
+        <li>Build forms from scratch, or start from a template: risk assessment, site safety check, crew sign-in, delivery note, pre-event checklist, post-event report or client sign-off.</li>
+        <li>Forms can take photos and on-screen signatures.</li>
+        <li>On Pro, share a crew link or QR code. Crew fill the form on their phone, with no login.</li>
+        <li>Download responses as CSV or PDF, or print a blank form.</li>
+      </ul>
+    </section>
+
+    <section id="crew" data-s>
+      <h2>Crew roster</h2>
+      <ul>
+        <li>Plan who does what and when, from days before the event (mowing the lawn, the marquee build) to after it (pack-down, cleaners).</li>
+        <li><span class="ui">Suggest shifts</span> fills in a typical roster for your type of event. <span class="ui">Add shift</span> creates your own, with a section, task, day, times and location.</li>
+        <li>A shift is covered either by your team (tick people; it shows “2 of 4 filled”) or by a supplier’s team.</li>
+        <li>Unfilled positions and anyone double-booked are flagged.</li>
+        <li>Your team’s hours × rates go into the budget. <span class="ui">Roster PDF</span> prints every day.</li>
+      </ul>
+    </section>
+
+    <section id="export" data-s>
+      <h2>Exporting &amp; sharing</h2>
+      <ul>
+        <li><b>Export pack:</b> one PDF with your choice of cover, floor plan (sharp at any zoom), site map, seating chart, place cards, guest list, run sheet, suppliers, crew roster, budget and load list.</li>
+        <li><b>Backup file:</b> in Export pack. It saves your whole event to a file you can keep.</li>
+        <li><b>Share</b> (Pro): a live link for clients and crew. Visitors see the plan read-only and can save their own copy to edit.</li>
+        <li><b>Also:</b> the floor plan PDF button on the floor plan, table plans (see above), and PNG pictures from 3D.</li>
+      </ul>
+    </section>
+
+    <section id="plans" data-s>
+      <h2>Free &amp; Pro</h2>
+      <table>
+        <tr><th></th><th>Free</th><th>Pro · US$39/month</th></tr>
+        <tr><td>Events</td><td>One, saved in this browser</td><td>Unlimited</td></tr>
+        <tr><td>Every planning feature</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Exports</td><td>Small watermark</td><td>Clean</td></tr>
+        <tr><td>Sync &amp; backup</td><td>—</td><td>Across all your devices</td></tr>
+        <tr><td>Live share links &amp; crew form links</td><td>—</td><td>✓</td></tr>
+        <tr><td>DWG import &amp; venue library publishing</td><td>—</td><td>✓</td></tr>
+      </table>
+      <ul>
+        <li>The price is the same wherever you are, billed in US dollars, with no per-user fees.</li>
+        <li>Upgrade from the account menu at top right.</li>
+        <li><b>Signing in:</b> enter your email and press the link we send you. There’s no password. If the email doesn’t arrive, check your junk folder.</li>
+        <li>When you sign in on Pro, events you made on the free plan are uploaded to your account.</li>
+      </ul>
+    </section>
+
+    <section id="shortcuts" data-s>
+      <h2>Keyboard shortcuts</h2>
+      <p>On Windows, use <kbd>Ctrl</kbd> wherever you see <kbd>⌘</kbd>.</p>
+      <table>
+        <tr><th>Anywhere</th><th></th></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>K</kbd></td><td>Search, jump to a tab, add things</td></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>Z</kbd> / <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>Z</kbd></td><td>Undo / redo</td></tr>
+        <tr><th>Floor plan</th><th></th></tr>
+        <tr><td><kbd>V</kbd> <kbd>H</kbd> <kbd>M</kbd> <kbd>F</kbd></td><td>Select, pan, measure, fill an area</td></tr>
+        <tr><td><kbd>Space</kbd> + drag</td><td>Pan</td></tr>
+        <tr><td><kbd>R</kbd> / <kbd>⇧</kbd> <kbd>R</kbd></td><td>Rotate 15° / back</td></tr>
+        <tr><td>Arrow keys / <kbd>⇧</kbd> + arrow</td><td>Nudge 10 cm / 1 m</td></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>D</kbd> · <kbd>⌘</kbd> <kbd>C</kbd> · <kbd>⌘</kbd> <kbd>V</kbd></td><td>Duplicate · copy · paste</td></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>A</kbd></td><td>Select everything</td></tr>
+        <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>0</kbd></td><td>Fit the plan to the screen</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Deselect and go back to the select tool</td></tr>
+        <tr><td><kbd>Alt</kbd> while dragging</td><td>Place freely without snapping</td></tr>
+        <tr><th>3D walk mode</th><th></th></tr>
+        <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</td><td>Move (hold <kbd>⇧</kbd> to hurry)</td></tr>
+      </table>
+    </section>
+
+    <section id="faq" data-s>
+      <h2>Questions</h2>
+      <h3>Where is my event saved?</h3>
+      <p>On the free plan, it’s saved in this browser on this device, automatically, as you work. Clearing your browser’s site data deletes it, so download a <span class="ui">Backup file</span> from Export pack now and then. On Pro, it’s also saved to your account and syncs between devices.</p>
+      <h3>Can I use it on my phone?</h3>
+      <p>Yes, every part works on a phone. The library and panels open as sheets from the bottom. Pinch to zoom, and tap a guest then a table to seat them.</p>
+      <h3>Can my client or crew see the plan?</h3>
+      <p>On Pro, press <span class="ui">Share</span> to get a live link. They see the latest version without needing an account. Crew can fill in your forms from a link or QR code.</p>
+      <h3>Something’s missing or not working</h3>
+      <p>Press <span class="ui">Feedback</span> in the top bar to tell us. We read everything. For a missing library item, use <span class="ui">Request item</span> so you can send photos and its size.</p>
+      <p id="nores" class="empty hidden">No sections match your search.</p>
+    </section>
+
+    <footer>
+      Plotline · <a href="/">Open the app</a> · Questions? Use the Feedback button inside Plotline.
+    </footer>
+  </main>
+</div>
+
+<script>
+  // Search: hide sections that don't mention every word typed.
+  const q = document.getElementById('q')
+  const sections = [...document.querySelectorAll('[data-s]')]
+  const links = [...document.querySelectorAll('nav.toc a')]
+  q.addEventListener('input', () => {
+    const words = q.value.toLowerCase().split(/\s+/).filter(Boolean)
+    let shown = 0
+    for (const s of sections) {
+      const hit = words.every((w) => s.textContent.toLowerCase().includes(w))
+      s.classList.toggle('hidden', !hit && s.id !== 'faq')
+      if (hit) shown++
+    }
+    document.getElementById('nores').classList.toggle('hidden', shown > 0 || !words.length)
+    for (const a of links) a.classList.toggle('hidden', !!words.length && document.querySelector(a.getAttribute('href'))?.classList.contains('hidden'))
+  })
+  // Highlight where you are in the contents.
+  const io = new IntersectionObserver((es) => {
+    for (const e of es) if (e.isIntersecting) for (const a of links) a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)
+  }, { rootMargin: '-30% 0px -60% 0px' })
+  sections.forEach((s) => io.observe(s))
+  // Collapse the contents on small screens.
+  if (matchMedia('(max-width: 860px)').matches) document.querySelector('nav.toc details').removeAttribute('open')
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Search, MessageSquarePlus, Plus, Download, Share2, Home as HomeIcon, Sparkles, Undo2, Redo2, User, Store as StoreIcon, Armchair } from 'lucide-react'
+import { Search, MessageSquarePlus, Plus, Download, Share2, Home as HomeIcon, Sparkles, Undo2, Redo2, User, Store as StoreIcon, Armchair, BookOpen } from 'lucide-react'
 import { useUI } from '../store/ui'
 import { useEvent, update } from '../store/event'
 import { canCreateEvent } from '../store/actions'
@@ -85,6 +85,7 @@ export const CommandPalette = () => {
           if (await canCreateEvent()) useUI.getState().setScreen('onboarding')
         },
       },
+      { id: 'help', label: 'How to use Plotline (help guide)', icon: <BookOpen size={16} />, run: () => (close(), window.open('/help/', '_blank', 'noopener')) },
       { id: 'feedback', label: 'Send feedback or request a feature', icon: <MessageSquarePlus size={16} />, run: () => set({ palette: false, feedbackOpen: true }) },
       { id: 'home', label: 'All events', icon: <HomeIcon size={16} />, run: () => (close(), useUI.getState().setScreen('home')) },
     ]

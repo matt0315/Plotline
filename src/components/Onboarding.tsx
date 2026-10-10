@@ -60,6 +60,9 @@ export const Onboarding = () => {
             <img src="/favicon.svg" className="h-8 w-8" alt="" />
             <span className="font-semibold">{BRAND}</span>
             <div className="flex-1" />
+            <a href="/help/" target="_blank" rel="noopener" className="mr-1 text-sm text-slate-500 hover:text-slate-800">
+              How it works
+            </a>
             <FeedbackButton />
             {hasEvents && (
               <Button size="sm" className="whitespace-nowrap" onClick={() => useUI.getState().setScreen('home')}>
