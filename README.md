@@ -126,7 +126,7 @@ npm run dev
 
    The webhook is the only thing that grants Pro. A card failure (`past_due`) or a cancellation switches it off. Prefer the API? Set the `STRIPE_SECRET_KEY` and `STRIPE_PRICE_ID` secrets and remove `STRIPE_PAYMENT_LINK`; Checkout Sessions take over.
 
-5. **Feedback alerts (optional).** Feedback is always saved to D1; run `npm run feedback` to read the latest 50. To also get each one by email, set a `FEEDBACK_TO` variable (for example `npx wrangler secret put FEEDBACK_TO`). This needs Email Sending set up (step 2). Replies go straight to the sender when they left an email.
+5. **Feedback and item-request alerts.** Both are always saved to D1. Run `npm run feedback` or `npm run requests` to read the latest 50. Each one is also emailed to `FEEDBACK_TO` (set in `wrangler.jsonc` to `hello@plotlineapp.online`, which Cloudflare Email Routing forwards to the owner's inbox). This needs Email Sending set up (step 2). Replying goes straight to the sender when they left an email.
 
 6. **DWG (optional).** Run `npx wrangler secret put CLOUDCONVERT_API_KEY`. The browser uploads directly to CloudConvert, and jobs are tagged with the user's ID. LibreDWG is deliberately not used because it's GPL v3.
 

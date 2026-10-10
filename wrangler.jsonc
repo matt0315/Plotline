@@ -38,6 +38,8 @@
     "APP_URL": "https://www.plotlineapp.online",
     "EMAIL_FROM": "hello@plotlineapp.online",
     "APP_NAME": "Plotline",
+    // Feedback and item-request alerts. Email Routing forwards this address to the owner's inbox.
+    "FEEDBACK_TO": "hello@plotlineapp.online",
     // $39/mo Plotline Pro. Public link, so not a secret. Customers are tagged with their account id.
     "STRIPE_PAYMENT_LINK": "https://buy.stripe.com/3cIcN7c159KT1rugkv6g800"
   },
