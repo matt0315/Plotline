@@ -7,7 +7,7 @@ import { kitEntries } from '../../lib/kit'
 import { nextInRun, runOf } from '../../lib/runs'
 import { doc, update } from '../../store/event'
 import { uid } from '../../lib/id'
-import { bbox, footprint, isSeating, snap as snapTo } from '../../lib/geometry'
+import { bbox, footprint, isSeating, rotate as rotateBy2d, snap as snapTo } from '../../lib/geometry'
 import { SNAP, useLayoutView, viewCenter } from './viewStore'
 
 export const makeItem = (key: string, x: number, y: number): LayoutItem => {
@@ -208,3 +208,38 @@ export const tentToSite = (id: string) =>
       it.tent.siteId = siteId
     }
   })
+
+/**
+ * Turn each selected trestle run (or banquet table) about its own middle to square (0°) or 45° from square,
+ * keeping the run joined. Square is taken from the nearest quarter turn it already sits on.
+ */
+export const angleRuns = (ids: string[], deg: 0 | 45) => {
+  const items = doc().layout.items
+  const done = new Set<string>()
+  const moves = new Map<string, { x: number; y: number; rotation: number }>()
+  for (const id of ids) {
+    const t = items.find((i) => i.id === id)
+    if (!t || t.kind !== 'banquet-table' || done.has(id)) continue
+    const run = runOf(items, id)
+    run.forEach((r) => done.add(r.id))
+    const cx = run.reduce((s, r) => s + r.x, 0) / run.length
+    const cy = run.reduce((s, r) => s + r.y, 0) / run.length
+    const now = run[0].rotation
+    // The square it's nearest to, measured from where it would sit unangled.
+    const square = Math.round((now - (((now % 90) + 90) % 90 >= 22.5 && ((now % 90) + 90) % 90 < 67.5 ? 45 : 0)) / 90) * 90
+    const delta = square + deg - now
+    if (Math.abs(delta) < 0.01) continue
+    for (const r of run) {
+      const p = rotateBy2d({ x: r.x - cx, y: r.y - cy }, delta)
+      moves.set(r.id, { x: cx + p.x, y: cy + p.y, rotation: (((r.rotation + delta) % 360) + 360) % 360 })
+    }
+  }
+  if (moves.size)
+    update((d) => {
+      for (const i of d.layout.items) {
+        const m = moves.get(i.id)
+        if (m) Object.assign(i, m)
+      }
+    })
+  return moves.size
+}

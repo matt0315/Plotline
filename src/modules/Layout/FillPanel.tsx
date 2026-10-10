@@ -65,6 +65,20 @@ export const FillPanel = () => {
             m
           </label>
         </div>
+        {o.style === 'trestle' && (
+          <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+            {(
+              [
+                [0, 'Straight runs'],
+                [45, 'Angled 45°'],
+              ] as const
+            ).map(([deg, label]) => (
+              <button key={deg} onClick={() => setO({ runAngle: deg })} className={`rounded-md px-2 py-1 ${o.runAngle === deg ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-600'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {(o.style.startsWith('round') || o.style === 'cocktail') && (
           <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
             {PATTERNS.map((pt) => (

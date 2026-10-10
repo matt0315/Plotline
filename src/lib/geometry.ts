@@ -200,8 +200,19 @@ export const polyGap = (A: Pt[], B: Pt[]): number => {
 export type Clash = { a: string; b: string; gap: number; kind: 'walkway' | 'exit' | 'overlap' | 'pole' }
 
 /** Two trestles in a run touch end to end by design — that's not an overlap. */
-const buttedTrestles = (A: LayoutItem, B: LayoutItem) =>
-  !!A.joinable && !!B.joinable && Math.abs(Math.hypot(A.x - B.x, A.y - B.y) - (Math.max(A.w, A.h) + Math.max(B.w, B.h)) / 2) < 0.05
+const buttedTrestles = (A: LayoutItem, B: LayoutItem) => {
+  if (!A.joinable || !B.joinable) return false
+  // Same long-axis direction (either way round), centres in line along it, half of each length apart.
+  const axis = (i: LayoutItem) => i.rotation + (i.w >= i.h ? 0 : 90)
+  const turn = Math.abs((((axis(A) - axis(B)) % 180) + 180) % 180)
+  if (Math.min(turn, 180 - turn) > 1) return false
+  const a = rotate({ x: 1, y: 0 }, axis(A))
+  const dx = B.x - A.x
+  const dy = B.y - A.y
+  const along = dx * a.x + dy * a.y
+  const across = -dx * a.y + dy * a.x
+  return Math.abs(across) < 0.05 && Math.abs(Math.abs(along) - (Math.max(A.w, A.h) + Math.max(B.w, B.h)) / 2) < 0.05
+}
 
 // Things you stand or place furniture on — a table on a stage isn't a clash.
 const FLOOR_KINDS = new Set(['wall', 'label', 'door', 'dancefloor', 'pillar', 'stage', 'tent'])
@@ -220,8 +231,8 @@ export const clearanceIssues = (items: LayoutItem[]): Clash[] => {
       const B = solids[j]
       // Cheap reject before the polygon test.
       if (Math.hypot(A.x - B.x, A.y - B.y) > Math.max(A.w, A.h) + Math.max(B.w, B.h) + 3) continue
+      if (buttedTrestles(A, B)) continue
       const gap = polyGap(polys.get(A.id)!, polys.get(B.id)!)
-      if (gap === 0 && buttedTrestles(A, B)) continue
       if (gap === 0) out.push({ a: A.id, b: B.id, gap, kind: 'overlap' })
       else if (gap < WALKWAY_MIN && isSeating(A) && isSeating(B)) out.push({ a: A.id, b: B.id, gap, kind: 'walkway' })
     }

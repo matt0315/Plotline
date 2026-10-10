@@ -37,7 +37,7 @@ import { seatMap, seatKey, seatingStats } from '../../lib/derived'
 import { uid } from '../../lib/id'
 import { STAGE_HEIGHTS, deckDims, isDeckStage, stageKit, stageSize } from '../../lib/staging'
 import { useLayoutView } from './viewStore'
-import { addTablesForShortfall, align, deleteItems, distribute, duplicateItems, extendRun, rotateBy, tentToSite } from './layoutActions'
+import { addTablesForShortfall, angleRuns, align, deleteItems, distribute, duplicateItems, extendRun, rotateBy, tentToSite } from './layoutActions'
 import { seatGuest } from '../Guests/guestActions'
 import { Button, IconButton, NumberCell, Select, toast } from '../../components/ui'
 
@@ -495,10 +495,12 @@ const ArrangeControls = ({ items }: { items: LayoutItem[] }) => {
   const free = items.filter((i) => !i.locked && i.kind !== 'tent' && i.kind !== 'wall' && i.kind !== 'exit' && i.kind !== 'door')
   const tables = free.filter((i) => i.kind === 'round-table' || i.kind === 'banquet-table' || i.kind === 'cocktail-table' || i.kind === 'chair-block')
   const movable = tables.length >= 2 ? tables : free
+  // Joined trestle runs move as whole runs: only straight or angled, so the grid tools don't pull them apart.
+  const runsOnly = movable.length > 0 && movable.every((i) => i.kind === 'banquet-table') && movable.some((i) => i.joinable)
   // The selection's middle and shape when you first touched it, so moving the slider back and forth doesn't creep.
   const key = movable.map((i) => i.id).join(',')
   const frame = useRef<{ key: string; f: ArrangeFrame } | null>(null)
-  if (movable.length < 2) return null
+  if (movable.length < 2 && !runsOnly) return null
   const apply = (pt = pattern, g = gap) => {
     if (frame.current?.key !== key) frame.current = { key, f: frameOf(movable) }
     const pos = arrangeItems(movable, pt, g, frame.current.f)
@@ -514,7 +516,8 @@ const ArrangeControls = ({ items }: { items: LayoutItem[] }) => {
       <div className="text-xs font-medium text-slate-600">
         Arrange {movable.length} {tables.length >= 2 ? 'tables' : 'items'}
       </div>
-      <div className="flex flex-wrap gap-1">
+      {!runsOnly && (
+        <div className="flex flex-wrap gap-1">
         {PATTERNS.filter((p) => p.id !== 'auto').map((p) => (
           <button
             key={p.id}
@@ -529,7 +532,20 @@ const ArrangeControls = ({ items }: { items: LayoutItem[] }) => {
             {p.label}
           </button>
         ))}
-      </div>
+        </div>
+      )}
+      {movable.some((i) => i.kind === 'banquet-table') && (
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          Runs
+          <button onClick={() => angleRuns(movable.map((i) => i.id), 0)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-600 hover:bg-slate-50">
+            Straight
+          </button>
+          <button onClick={() => angleRuns(movable.map((i) => i.id), 45)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-600 hover:bg-slate-50" title="Turn each run 45° about its middle">
+            Angled 45°
+          </button>
+        </div>
+      )}
+      {!runsOnly && (
       <label className="flex items-center gap-2 text-xs text-slate-500" title="Clear gap between neighbouring tables' chairs">
         Gap
         <input
@@ -547,6 +563,7 @@ const ArrangeControls = ({ items }: { items: LayoutItem[] }) => {
         />
         <span className={`w-14 text-right tabular-nums ${gap < WALKWAY_MIN ? 'text-amber-700' : 'text-slate-700'}`}>{gap.toFixed(2)} m</span>
       </label>
+      )}
     </div>
   )
 }

@@ -58,13 +58,15 @@ export interface FillOptions {
   /** Clear gap between neighbouring tables' chairs, metres. */
   gap: number
   pattern: Pattern
+  /** Trestle runs straight along the room, or turned 45° across it. */
+  runAngle: 0 | 45
   /** Keep exit doors' clear zones empty. */
   keepExits: boolean
   /** Leave this much open in front of stages and around dance floors. */
   stageGap: number
 }
 
-export const DEFAULT_FILL: FillOptions = { style: 'round-66', gap: 1.2, pattern: 'auto', keepExits: true, stageGap: 2 }
+export const DEFAULT_FILL: FillOptions = { style: 'round-66', gap: 1.2, pattern: 'auto', runAngle: 0, keepExits: true, stageGap: 2 }
 
 const ROUND: Record<string, { d: number; seats: number }> = { 'round-60': { d: 1.52, seats: 8 }, 'round-66': { d: 1.68, seats: 10 }, 'round-72': { d: 1.83, seats: 12 } }
 const TRESTLE = { w: 2.4, d: 0.75, seats: 8 }
@@ -202,6 +204,30 @@ export const fillArea = (region: FillRegion, o: FillOptions, items: LayoutItem[]
     // Standing room: the gap is space for people round each table.
     const p = 0.76 + Math.max(1.2, aisle * 1.5)
     result = byPattern((x, y) => base('cocktail-table', x, y, { w: 0.76, h: 0.76, key: 'cocktail' }), p)
+  } else if (o.style === 'trestle' && o.runAngle === 45) {
+    // Parallel runs turned 45° across the area. Trestles step a whole table along each line so neighbours butt
+    // into one run; a blocked spot just breaks that run. A few line offsets are tried and the fullest kept.
+    const across = TRESTLE.d + 2 * (CHAIR_GAP + CHAIR) + aisle
+    const reach = Math.hypot(hw, hh)
+    const c45 = Math.SQRT1_2
+    let top: LayoutItem[] = []
+    for (const fc of [0, 0.25, 0.5, 0.75])
+      for (const ft of [0, 0.5]) {
+        const out: LayoutItem[] = []
+        for (let c = -reach + fc * across; c <= reach; c += across)
+          for (let t = -reach + ft * TRESTLE.w; t <= reach; t += TRESTLE.w) {
+            // (t along the run, c across it) → the area's own frame, turned 45°.
+            const x = (t - c) * c45
+            const y = (t + c) * c45
+            if (Math.abs(x) > hw || Math.abs(y) > hh) continue
+            const it = base('banquet-table', x, y, { w: TRESTLE.w, h: TRESTLE.d, seats: TRESTLE.seats, joinable: true, key: 'trestle-24', rotation: region.rotation + 45 })
+            const fp = footprint(it)
+            if (!insideWithMargin(fp, outline, WALL_MARGIN) || !clear(fp, obs, it.x, it.y, TRESTLE.w)) continue
+            out.push(it)
+          }
+        if (out.length > top.length) top = out
+      }
+    result = top
   } else if (o.style === 'trestle') {
     // Long runs of joined trestles along the region's length, chairs both sides.
     const across = TRESTLE.d + 2 * (CHAIR_GAP + CHAIR) + aisle
