@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Trash2,
   Copy,
@@ -30,6 +30,7 @@ import { KIND_LABEL } from '../../data/furniture'
 import { clearanceIssues, isSeating, chairBlockSize, fmtArea, fmtFt, seatsLocal, tentPoles, tentWallLength, WALKWAY_MIN } from '../../lib/geometry'
 import { TENT_TYPES, tentName, tentSpec } from '../../data/tents'
 import { zones } from '../../lib/capacity'
+import { arrangeItems, frameOf, MIN_GAP, PATTERNS, type ArrangeFrame, type Pattern } from '../../lib/fill'
 import { sightlineSummary } from '../../lib/sightlines'
 import { runOf } from '../../lib/runs'
 import { seatMap, seatKey, seatingStats } from '../../lib/derived'
@@ -486,6 +487,70 @@ const Single = ({ item }: { item: LayoutItem }) => {
   )
 }
 
+/** Re-space the selected tables: pick a pattern and a gap, they move as you change it. */
+const ArrangeControls = ({ items }: { items: LayoutItem[] }) => {
+  const [pattern, setPattern] = useState<Exclude<Pattern, 'auto'>>('grid')
+  const [gap, setGap] = useState(1.2)
+  // Tables if any are selected (so a stray bar or gift table in the box stays put), otherwise whatever's selected.
+  const free = items.filter((i) => !i.locked && i.kind !== 'tent' && i.kind !== 'wall' && i.kind !== 'exit' && i.kind !== 'door')
+  const tables = free.filter((i) => i.kind === 'round-table' || i.kind === 'banquet-table' || i.kind === 'cocktail-table' || i.kind === 'chair-block')
+  const movable = tables.length >= 2 ? tables : free
+  // The selection's middle and shape when you first touched it, so moving the slider back and forth doesn't creep.
+  const key = movable.map((i) => i.id).join(',')
+  const frame = useRef<{ key: string; f: ArrangeFrame } | null>(null)
+  if (movable.length < 2) return null
+  const apply = (pt = pattern, g = gap) => {
+    if (frame.current?.key !== key) frame.current = { key, f: frameOf(movable) }
+    const pos = arrangeItems(movable, pt, g, frame.current.f)
+    update((d) => {
+      for (const i of d.layout.items) {
+        const p = pos.get(i.id)
+        if (p) (i.x = p.x), (i.y = p.y)
+      }
+    }, 'arrange')
+  }
+  return (
+    <div className="space-y-2 rounded-lg bg-slate-50 p-2.5">
+      <div className="text-xs font-medium text-slate-600">
+        Arrange {movable.length} {tables.length >= 2 ? 'tables' : 'items'}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {PATTERNS.filter((p) => p.id !== 'auto').map((p) => (
+          <button
+            key={p.id}
+            title={p.title}
+            onClick={() => {
+              const pt = p.id as Exclude<Pattern, 'auto'>
+              setPattern(pt)
+              apply(pt)
+            }}
+            className={`rounded-md border px-2 py-1 text-xs ${pattern === p.id ? 'border-brand-300 bg-brand-50 font-medium text-brand-700' : 'border-slate-200 bg-white text-slate-600'}`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <label className="flex items-center gap-2 text-xs text-slate-500" title="Clear gap between neighbouring tables' chairs">
+        Gap
+        <input
+          type="range"
+          min={MIN_GAP}
+          max={3}
+          step={0.05}
+          value={gap}
+          className="min-w-0 flex-1 accent-brand-600"
+          onChange={(e) => {
+            const g = parseFloat(e.target.value)
+            setGap(g)
+            apply(pattern, g)
+          }}
+        />
+        <span className={`w-14 text-right tabular-nums ${gap < WALKWAY_MIN ? 'text-amber-700' : 'text-slate-700'}`}>{gap.toFixed(2)} m</span>
+      </label>
+    </div>
+  )
+}
+
 const Multi = ({ items }: { items: LayoutItem[] }) => {
   const ids = items.map((i) => i.id)
   const seats = items.filter(isSeating).reduce((s, i) => s + i.seats, 0)
@@ -520,6 +585,7 @@ const Multi = ({ items }: { items: LayoutItem[] }) => {
           Space evenly ↕
         </Button>
       </div>
+      <ArrangeControls items={items} />
       <Row label="Colour">
         <div className="flex flex-wrap gap-1">
           {SWATCHES.map((c) => (

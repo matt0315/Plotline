@@ -26,23 +26,45 @@ export const FILL_STYLES: { id: FillStyle; label: string }[] = [
   { id: 'cocktail', label: 'Cocktail / standing' },
 ]
 
+/** Quick picks for the gap between tables (chair back to chair back). */
 export const SPACINGS = [
   { id: 'comfortable', label: 'Comfortable', aisle: 1.5 },
   { id: 'standard', label: 'Standard', aisle: 1.2 },
   { id: 'minimum', label: 'Minimum', aisle: 0.915 },
 ] as const
-export type Spacing = (typeof SPACINGS)[number]['id']
+
+/**
+ * How tables sit relative to each other:
+ * grid — straight rows and columns; staggered — every other row shifted half a table (packs the most rounds);
+ * diamond — the grid turned 45°, rows wider apart but closer together; auto — whichever fits most.
+ */
+export type Pattern = 'auto' | 'grid' | 'staggered' | 'diamond'
+export const PATTERNS: { id: Pattern; label: string; title: string }[] = [
+  { id: 'auto', label: 'Best fit', title: 'Try every pattern and keep the one that fits most' },
+  { id: 'grid', label: 'Grid', title: 'Straight rows and columns' },
+  { id: 'staggered', label: 'Alternate', title: 'Every other row shifted half a table' },
+  { id: 'diamond', label: 'Diamond 45°', title: 'The grid turned 45°' },
+]
+
+/** Row and column pitch for a pattern, given the centre-to-centre distance two neighbours need. */
+export const latticeFor = (pattern: Exclude<Pattern, 'auto'>, p: number) =>
+  pattern === 'grid' ? { px: p, py: p, stagger: false } : pattern === 'staggered' ? { px: p, py: p * Math.sqrt(3) / 2, stagger: true } : { px: p * Math.SQRT2, py: p / Math.SQRT2, stagger: true }
+
+/** The narrowest gap we'll lay out — below an accessible walkway, so it's flagged. */
+export const MIN_GAP = 0.6
 
 export interface FillOptions {
   style: FillStyle
-  spacing: Spacing
+  /** Clear gap between neighbouring tables' chairs, metres. */
+  gap: number
+  pattern: Pattern
   /** Keep exit doors' clear zones empty. */
   keepExits: boolean
   /** Leave this much open in front of stages and around dance floors. */
   stageGap: number
 }
 
-export const DEFAULT_FILL: FillOptions = { style: 'round-66', spacing: 'standard', keepExits: true, stageGap: 2 }
+export const DEFAULT_FILL: FillOptions = { style: 'round-66', gap: 1.2, pattern: 'auto', keepExits: true, stageGap: 2 }
 
 const ROUND: Record<string, { d: number; seats: number }> = { 'round-60': { d: 1.52, seats: 8 }, 'round-66': { d: 1.68, seats: 10 }, 'round-72': { d: 1.83, seats: 12 } }
 const TRESTLE = { w: 2.4, d: 0.75, seats: 8 }
@@ -104,7 +126,7 @@ const clear = (poly: Pt[], obs: Obstacle[], cx: number, cy: number, reach: numbe
 
 /** Lay furniture out across a region, keeping walkways, exits, stages and poles clear. Returns new items, not yet added. */
 export const fillArea = (region: FillRegion, o: FillOptions, items: LayoutItem[], firstTable = 1): LayoutItem[] => {
-  const aisle = SPACINGS.find((s) => s.id === o.spacing)!.aisle
+  const aisle = Math.max(MIN_GAP, o.gap || 1.2)
   const outline = regionPoly(region)
   const obs = obstacles(items, region, o, aisle)
   const local = (x: number, y: number) => toWorld(region, { x, y })
@@ -148,6 +170,21 @@ export const fillArea = (region: FillRegion, o: FillOptions, items: LayoutItem[]
     return top
   }
 
+  /** Lay out in the chosen pattern — or try each and keep the one that fits most (ties go to the tidier grid). */
+  const byPattern = (make: (x: number, y: number) => LayoutItem | null, p: number) => {
+    const run = (pt: Exclude<Pattern, 'auto'>) => {
+      const l = latticeFor(pt, p)
+      return best(make, l.px, l.py, l.stagger)
+    }
+    if (o.pattern !== 'auto') return run(o.pattern)
+    let top: LayoutItem[] = []
+    for (const pt of ['grid', 'staggered', 'diamond'] as const) {
+      const got = run(pt)
+      if (got.length > top.length) top = got
+    }
+    return top
+  }
+
   const base = (kind: LayoutItem['kind'], x: number, y: number, extra: Partial<LayoutItem>): LayoutItem => {
     const c = local(x, y)
     return { id: uid('i'), kind, x: c.x, y: c.y, w: 1, h: 1, rotation: region.rotation, label: '', seats: 0, layer: 'furniture', color: '#ffffff', ...extra }
@@ -159,14 +196,12 @@ export const fillArea = (region: FillRegion, o: FillOptions, items: LayoutItem[]
     const reach = r.d + 2 * (CHAIR_GAP + CHAIR)
     const p = reach + aisle
     const make = (x: number, y: number) => base('round-table', x, y, { w: r.d, h: r.d, seats: r.seats, key: o.style, label: '' })
-    // Staggered rows often pack more than a square grid; take whichever fits more here.
-    const stag = best(make, p, p * 0.866, true)
-    const grid = best(make, p, p, false)
-    result = stag.length > grid.length ? stag : grid // a tie goes to the tidier grid
+    result = byPattern(make, p)
     for (const t of result) t.label = `Table ${n++}`
   } else if (o.style === 'cocktail') {
-    const p = 0.76 + 1.8
-    result = best((x, y) => base('cocktail-table', x, y, { w: 0.76, h: 0.76, key: 'cocktail' }), p, p * 0.866, true)
+    // Standing room: the gap is space for people round each table.
+    const p = 0.76 + Math.max(1.2, aisle * 1.5)
+    result = byPattern((x, y) => base('cocktail-table', x, y, { w: 0.76, h: 0.76, key: 'cocktail' }), p)
   } else if (o.style === 'trestle') {
     // Long runs of joined trestles along the region's length, chairs both sides.
     const across = TRESTLE.d + 2 * (CHAIR_GAP + CHAIR) + aisle
@@ -225,4 +260,56 @@ export const regionFor = (i: Pick<LayoutItem, 'id' | 'x' | 'y' | 'w' | 'h' | 'ro
     return { x: i.x, y: i.y, w: i.w, h: i.h, rotation: i.rotation, sourceId: i.id, poly: pts.map((p) => toWorld(i, p)) }
   }
   return { x: i.x, y: i.y, w: i.w, h: i.h, rotation: i.rotation, sourceId: i.kind === 'tent' ? i.id : undefined }
+}
+
+/**
+ * Re-space tables already on the plan: same tables, same middle, new pattern and gap.
+ * Keeps them in reading order (top-left first) so table numbers stay roughly where they were.
+ */
+/** Where a selection sits and the shape it makes, captured once so repeated re-spacing doesn't drift. */
+export interface ArrangeFrame {
+  cx: number
+  cy: number
+  /** Width ÷ height of the selection's spread. */
+  aspect: number
+}
+
+export const frameOf = (items: LayoutItem[]): ArrangeFrame => {
+  const xs = items.map((i) => i.x)
+  const ys = items.map((i) => i.y)
+  const bw = Math.max(1, Math.max(...xs) - Math.min(...xs))
+  const bh = Math.max(1, Math.max(...ys) - Math.min(...ys))
+  return { cx: (Math.max(...xs) + Math.min(...xs)) / 2, cy: (Math.max(...ys) + Math.min(...ys)) / 2, aspect: bw / bh }
+}
+
+export const arrangeItems = (items: LayoutItem[], pattern: Exclude<Pattern, 'auto'>, gap: number, frame = frameOf(items)): Map<string, Pt> => {
+  const out = new Map<string, Pt>()
+  if (items.length < 2) return out
+  // Pitch from the biggest table (with chairs) so nothing collides.
+  const reach = Math.max(
+    ...items.map((i) => {
+      const fp = footprint(i)
+      const xs = fp.map((q) => q.x)
+      const ys = fp.map((q) => q.y)
+      return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys))
+    }),
+  )
+  const l = latticeFor(pattern, reach + Math.max(MIN_GAP, gap))
+  const { cx, cy, aspect } = frame
+  // Keep roughly the shape the tables made when you started.
+  const n = items.length
+  const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt((n * aspect * l.py) / l.px)) || 1))
+  const rows = Math.ceil(n / cols)
+  const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x)
+  const width = (cols - 1) * l.px + (l.stagger && rows > 1 ? l.px / 2 : 0)
+  const height = (rows - 1) * l.py
+  const lastCount = n - (rows - 1) * cols
+  sorted.forEach((it, k) => {
+    const r = Math.floor(k / cols)
+    const c = k % cols
+    // A short last row sits centred under the others.
+    const shift = (l.stagger && r % 2 ? l.px / 2 : 0) + (r === rows - 1 && lastCount < cols ? ((cols - lastCount) * l.px) / 2 : 0)
+    out.set(it.id, { x: cx - width / 2 + c * l.px + shift, y: cy - height / 2 + r * l.py })
+  })
+  return out
 }
