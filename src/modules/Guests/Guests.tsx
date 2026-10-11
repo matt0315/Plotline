@@ -8,6 +8,7 @@ import { seatingStats } from '../../lib/derived'
 import { download, slug } from '../../lib/share'
 import { autoSeat, newGuest, parseGuests, seatGuest } from './guestActions'
 import { Button, Cell, Empty, IconButton, Modal, PageHeader, Select, toast, focusSoon } from '../../components/ui'
+import { track } from '../../lib/track'
 
 const RSVP_TEXT: Record<Rsvp, string> = { yes: 'text-emerald-700 font-medium', no: 'text-red-600', maybe: 'text-amber-700', pending: 'text-slate-500' }
 const RSVPS: { value: Rsvp; label: string }[] = [
@@ -71,6 +72,7 @@ export default function Guests() {
     const guests = parseGuests(text)
     if (!guests.length) return toast('No names found')
     update((x) => void x.guests.push(...guests))
+    track('guests_import')
     toast(`Added ${guests.length} guest${guests.length === 1 ? '' : 's'}`)
   }
 

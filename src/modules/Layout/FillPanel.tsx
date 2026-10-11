@@ -6,6 +6,7 @@ import { DENSITY } from '../../lib/capacity'
 import { fmtArea } from '../../lib/geometry'
 import { Button, Select, toast } from '../../components/ui'
 import { useLayoutView } from './viewStore'
+import { track } from '../../lib/track'
 
 /** Choose how to fill the picked area, see the ghost layout live, then place it. */
 export const FillPanel = () => {
@@ -22,6 +23,7 @@ export const FillPanel = () => {
   const apply = () => {
     if (!preview.length) return
     update((d) => void d.layout.items.push(...preview))
+    track('fill', o.style === 'trestle' && o.runAngle === 45 ? 'trestle-45' : o.style)
     useLayoutView.getState().select(preview.map((i) => i.id))
     toast(`Placed ${preview.length} ${o.style === 'theatre' ? 'blocks' : 'tables'}${seats ? ` · ${seats} seats` : ''}`)
     set({ fill: null, fillPreview: [], tool: 'select' })

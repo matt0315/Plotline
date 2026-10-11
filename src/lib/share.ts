@@ -4,6 +4,7 @@ import { migrate } from '../store/migrate'
 import { planFromRow, storage, type PlanRow } from '../store/persistence'
 import { api } from './api'
 import { uid } from './id'
+import { track } from './track'
 
 export const download = (blob: Blob, filename: string) => {
   const a = document.createElement('a')
@@ -37,8 +38,10 @@ export const readShareHash = (hash: string): EventDoc | null => {
 
 /* ---------- Cloud share (live, read-only) ---------- */
 
-export const createCloudShare = async (d: EventDoc): Promise<string> =>
-  (await api<{ token: string }>(`/api/events/${encodeURIComponent(d.id)}/share`, { method: 'POST' })).token
+export const createCloudShare = async (d: EventDoc): Promise<string> => {
+  track('share_created')
+  return (await api<{ token: string }>(`/api/events/${encodeURIComponent(d.id)}/share`, { method: 'POST' })).token
+}
 
 export const revokeCloudShare = async (id: string) => {
   await api(`/api/events/${encodeURIComponent(id)}/share`, { method: 'DELETE' })

@@ -11,6 +11,7 @@ import { VenueSearch } from './VenueSearch'
 import { FeedbackButton } from './Feedback'
 import { Button, Select } from './ui'
 import { currencyOptions, localCurrency } from '../lib/money'
+import { track } from '../lib/track'
 
 const TYPES: { id: EventType; icon: React.ReactNode }[] = [
   { id: 'wedding', icon: <Heart size={20} /> },
@@ -44,6 +45,7 @@ export const Onboarding = () => {
     setBusy(true)
     const doc = blank ? blankEvent({ name: name || 'Untitled event', type, guestCount: guests, date, venue, currency }) : generateEvent({ type, name, date, guestCount: guests, venue, currency })
     await createAndOpen(doc)
+    track('event_created', blank ? 'blank' : type)
     setBusy(false)
   }
 

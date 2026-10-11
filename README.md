@@ -126,7 +126,11 @@ npm run dev
 
    The webhook is the only thing that grants Pro. A card failure (`past_due`) or a cancellation switches it off. Prefer the API? Set the `STRIPE_SECRET_KEY` and `STRIPE_PRICE_ID` secrets and remove `STRIPE_PAYMENT_LINK`; Checkout Sessions take over.
 
-5. **Who's using it.** Run `npm run stats` (or `npm run stats 29` for the last 29 days). It shows signed-up accounts, Pro subscribers, cloud-synced events, and how many people opened the app. App opens matter because free users plan without an account, so they never appear in the database. Those counts come from Cloudflare analytics and include automated site checkers.
+5. **Who's using it.** Run `npm run stats` (or `npm run stats 29` for the last 29 days). It shows signed-up accounts, Pro subscribers, cloud-synced events, and how many people opened the app. App opens matter because free users plan without an account, so they never appear in the database. Those counts come from Cloudflare analytics and include automated site checkers. It also shows **anonymous usage counts** from the app (`POST /api/t`, `worker/usage.ts`, table `usage_daily`):
+   - which features were used each day, such as events created (by type), PDFs, table plans, 3D, fill, imports, share links, sign-ins and upgrade clicks;
+   - active browsers per day, from a random id hashed with the date.
+
+   No event content, account or IP is stored, and Do Not Track is honoured.
 6. **Feedback and item-request alerts.** Both are always saved to D1. Run `npm run feedback` or `npm run requests` to read the latest 50. Each one is also emailed to `FEEDBACK_TO` (set in `wrangler.jsonc` to `hello@plotlineapp.online`, which Cloudflare Email Routing forwards to the owner's inbox). This needs Email Sending set up (step 2). Replying goes straight to the sender when they left an email.
 
 6. **DWG (optional).** Run `npx wrangler secret put CLOUDCONVERT_API_KEY`. The browser uploads directly to CloudConvert, and jobs are tagged with the user's ID. LibreDWG is deliberately not used because it's GPL v3.

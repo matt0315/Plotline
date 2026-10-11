@@ -4,6 +4,7 @@ import { loadKit, saveKit } from './persistence'
 import { setKitRegistry } from '../lib/kit'
 import { uid } from '../lib/id'
 import { toast } from '../components/ui'
+import { track } from '../lib/track'
 
 interface KitState {
   entries: KitEntry[]
@@ -34,6 +35,7 @@ export const useKit = create<KitState>((set, get) => ({
     set({ entries: k.entries, updated: k.updated, loaded: true })
   },
   upsert: (e) => {
+    if (!e.id) track('kit_item', e.libraryKey ? 'priced' : e.requestId ? 'requested' : 'custom')
     const now = new Date().toISOString()
     const entry: KitEntry = { ...e, id: e.id ?? uid('k'), updated: now }
     const entries = get().entries.some((x) => x.id === entry.id) ? get().entries.map((x) => (x.id === entry.id ? entry : x)) : [entry, ...get().entries]

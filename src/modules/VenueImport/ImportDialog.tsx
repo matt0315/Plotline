@@ -10,6 +10,7 @@ import { uid } from '../../lib/id'
 import { Button, Modal, toast } from '../../components/ui'
 import { useLayoutView } from '../Layout/viewStore'
 import { fitView } from '../Layout/Canvas'
+import { track } from '../../lib/track'
 
 const PDF_SCALES = [0, 20, 50, 100, 200, 250, 500, 1000]
 
@@ -99,6 +100,7 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
     setBusy('Saving…')
     try {
       await savePlan(plan)
+      track('import_drawing', plan.source)
     } catch (e) {
       console.error(e)
       toast('Saved on this device — cloud upload failed')

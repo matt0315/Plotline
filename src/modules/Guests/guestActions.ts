@@ -3,6 +3,7 @@ import { uid } from '../../lib/id'
 import { doc, update } from '../../store/event'
 import { isSeating, seatsWorld } from '../../lib/geometry'
 import { seatKey } from '../../lib/derived'
+import { track } from '../../lib/track'
 
 export const newGuest = (over: Partial<Guest> = {}): Guest => ({
   id: uid('g'),
@@ -114,6 +115,7 @@ export const autoSeat = () => {
   update((dd) => {
     for (const g of dd.guests) if (assign.has(g.id)) g.seat = assign.get(g.id)
   })
+  if (assign.size) track('auto_seat')
   return { seated: assign.size, left: waiting.length - assign.size }
 }
 

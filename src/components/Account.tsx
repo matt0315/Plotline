@@ -5,6 +5,7 @@ import { useUI } from '../store/ui'
 import { api } from '../lib/api'
 import { BRAND, PRICE_LABEL } from '../lib/brand'
 import { Button, Modal, toast } from './ui'
+import { track } from '../lib/track'
 
 const PRO_FEATURES = [
   'Unlimited events',
@@ -23,6 +24,7 @@ const billingRedirect = async (path: string) => {
 }
 
 export const startCheckout = async () => {
+  track('upgrade_click')
   const { cloud, user } = useAccount.getState()
   if (!cloud) return toast('Billing is not available in this build')
   if (!user) {

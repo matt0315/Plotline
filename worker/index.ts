@@ -7,6 +7,7 @@ import * as dwg from './dwg'
 import { submitFeedback } from './feedback'
 import { submitItemRequest } from './requests'
 import { getKit, putKit } from './kit'
+import { track } from './usage'
 
 type Handler = (req: Request, env: AppEnv, ...params: string[]) => Promise<Response>
 
@@ -45,6 +46,8 @@ const ROUTES: [string, string, Handler][] = [
 
   ['POST', '/api/feedback', submitFeedback],
   ['POST', '/api/item-requests', submitItemRequest],
+
+  ['POST', '/api/t', track],
 
   ['GET', '/api/kit', getKit],
   ['PUT', '/api/kit', putKit],

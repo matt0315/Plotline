@@ -16,6 +16,7 @@ import { crewHours, dayTitle, sortShifts } from './roster'
 import { isSeating } from './geometry'
 import { BRAND } from './brand'
 import { slug } from './share'
+import { track } from './track'
 
 export type Section = 'cover' | 'layout' | 'site' | 'seating' | 'placecards' | 'guests' | 'run' | 'suppliers' | 'crew' | 'budget' | 'load'
 
@@ -150,6 +151,7 @@ const stamp = (p: jsPDF, d: EventDoc, watermark: boolean) => {
 }
 
 export const exportPack = async (d: EventDoc, sections: Section[]) => {
+  track('export', sections.length === 1 ? sections[0] : 'pack')
   const money = pdfMoneyFor(d.currency)
   const watermark = !useAccount.getState().isPro
   const firstLandscape = sections[0] === 'layout' || sections[0] === 'site' || sections[0] === 'seating'

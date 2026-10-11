@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { api } from '../lib/api'
 import { FREE_EVENT_LIMIT } from '../lib/brand'
+import { track } from '../lib/track'
 
 export type GateAction = 'second-event' | 'share' | 'clean-export' | 'cloud-sync' | 'dwg' | 'publish-plan'
 
@@ -71,7 +72,10 @@ export const gate = (action: GateAction): boolean => {
   return false
 }
 
-export const signIn = (email: string) => api<{ sent: boolean; devLink?: string }>('/api/auth/start', { method: 'POST', json: { email } })
+export const signIn = (email: string) => {
+  track('signin_start')
+  return api<{ sent: boolean; devLink?: string }>('/api/auth/start', { method: 'POST', json: { email } })
+}
 
 export const signOut = async () => {
   await api('/api/auth/logout', { method: 'POST' })

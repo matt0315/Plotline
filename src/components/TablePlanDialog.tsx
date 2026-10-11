@@ -11,6 +11,7 @@ import { LAYOUTS, PAPERS, renderTablePlan, resolveTablePlan, seatingData, tableP
 import { autoSeat } from '../modules/Guests/guestActions'
 import { Button, Modal, Select, toast } from './ui'
 import { startCheckout } from './Account'
+import { track } from '../lib/track'
 
 const LAYOUT_ICONS: Record<TablePlanLayout, ReactNode> = {
   alpha: <ArrowDownAZ size={18} />,
@@ -144,6 +145,7 @@ export default function TablePlanDialog() {
     try {
       const hit = built.current?.key === JSON.stringify([s, isPro]) ? built.current.pdf : await renderTablePlan(d, s, !isPro)
       hit.save(tablePlanFilename(d, s))
+      track('export_tableplan', s.layout)
     } catch (e) {
       console.error(e)
       toast('Export failed')

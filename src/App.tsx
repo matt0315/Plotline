@@ -12,6 +12,7 @@ import { Home } from './components/Home'
 import { UpgradeDialog, SignInDialog } from './components/Account'
 import { FeedbackDialog } from './components/Feedback'
 import { toast } from './components/ui'
+import { track } from './lib/track'
 
 let booted = false
 const boot = async () => {
@@ -43,6 +44,7 @@ const boot = async () => {
 
   // Shared links open read-only and never touch local storage.
   const token = params.get('s')
+  track(token ? 'shared_view' : 'app_open')
   if (token) {
     const shared = await loadCloudShare(token)
     if (shared) {

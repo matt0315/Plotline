@@ -12,6 +12,7 @@ import { BRAND } from '../../../lib/brand'
 import { toast } from '../../../components/ui'
 import { useLayoutView } from '../viewStore'
 import { buildScene, type BuildOptions, type Built, type Canopy, type Light } from './build'
+import { track } from '../../../lib/track'
 
 const LIGHTS: Record<Light, { bg: string; hemi: [string, string, number]; sun: [string, number]; sunAt: [number, number, number] }> = {
   day: { bg: '#cfe2f3', hemi: ['#ffffff', '#b9c6a9', 1.1], sun: ['#ffffff', 2.4], sunAt: [0.5, 1.2, 0.35] },
@@ -76,6 +77,7 @@ export default function Scene3D() {
 
   /* ---------- Renderer, camera, controls, loop ---------- */
   useEffect(() => {
+    track('view_3d')
     // On a phone, the scene needs the whole screen.
     if (window.innerWidth < 1024) useLayoutView.getState().set({ panel: null })
     const el = host.current!
@@ -241,6 +243,7 @@ export default function Scene3D() {
   useEffect(() => {
     const r = rig.current
     if (!r || !seatView) return
+    track('seat_view')
     const table = d.layout.items.find((i) => i.id === seatView.itemId)
     const p = table ? seatsWorld(table)[seatView.index] : undefined
     if (!p) return
@@ -268,6 +271,7 @@ export default function Scene3D() {
   const exportPng = () => {
     const r = rig.current
     if (!r) return
+    track('export_3d')
     r.renderer.render(r.scene, r.camera)
     const src = r.renderer.domElement
     const out = document.createElement('canvas')

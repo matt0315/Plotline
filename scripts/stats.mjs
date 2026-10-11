@@ -25,6 +25,51 @@ console.log(`  Paying (Pro)         ${db.pro}   ≈ US$${db.pro * 39}/month`)
 console.log(`  Syncing events       ${db.cloud_events} events from ${db.syncing} people`)
 console.log(`  Feedback / requests  ${db.feedback_30d} / ${db.requests_30d} in the last 30 days`)
 
+/* ---------- Usage (anonymous counts from the app) ---------- */
+const q = (sql) => JSON.parse(run(`npx wrangler d1 execute plotline --remote --json --command "${sql}"`))[0].results
+const LABEL = {
+  app_open: 'App opened',
+  shared_view: 'Shared link viewed',
+  event_created: 'Event created',
+  export: 'PDF exported',
+  export_tableplan: 'Table plan downloaded',
+  export_3d: '3D picture saved',
+  view_3d: '3D view opened',
+  seat_view: 'View from a seat',
+  fill: 'Fill an area used',
+  auto_seat: 'Auto-seat used',
+  guests_import: 'Guest list imported',
+  import_drawing: 'Venue drawing imported',
+  kit_item: 'Kit item added',
+  share_created: 'Share link made',
+  signin_start: 'Sign-in started',
+  upgrade_click: 'Upgrade clicked',
+}
+try {
+  const since = `date('now','-${DAYS} days')`
+  const daily = q(`SELECT day, COUNT(*) AS browsers FROM usage_devices WHERE day > ${since} GROUP BY day ORDER BY day`)
+  const events = q(`SELECT event, SUM(n) AS n FROM usage_daily WHERE day > ${since} GROUP BY event ORDER BY n DESC`)
+  console.log(`\nUsage, last ${DAYS} days (anonymous — counts only, never event content)`)
+  if (!events.length) console.log('  Nothing counted yet.')
+  else {
+    const avg = daily.length ? (daily.reduce((s, r) => s + r.browsers, 0) / daily.length).toFixed(1) : '0'
+    console.log(`  Active browsers         ${avg} a day on average · busiest ${Math.max(0, ...daily.map((r) => r.browsers))}`)
+    // Group variants under their event: "Event created  12  (wedding 7, party 3, blank 2)".
+    const byName = new Map()
+    for (const r of events) {
+      const [name, variant] = r.event.split(':')
+      const g = byName.get(name) ?? { n: 0, parts: [] }
+      g.n += r.n
+      if (variant) g.parts.push(`${variant} ${r.n}`)
+      byName.set(name, g)
+    }
+    for (const [name, g] of [...byName.entries()].sort((a, b) => b[1].n - a[1].n))
+      console.log(`  ${(LABEL[name] ?? name).padEnd(24)}${String(g.n).padStart(4)}${g.parts.length ? `   (${g.parts.join(', ')})` : ''}`)
+  }
+} catch (e) {
+  console.log(`\nUsage: couldn't read the counts (${e.message.split('\n')[0]})`)
+}
+
 /* ---------- Visitors (Cloudflare analytics) ---------- */
 // The app calls /api/me every time it opens in a real browser; bots that only fetch the page don't.
 try {
