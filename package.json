@@ -16,6 +16,7 @@
     "feedback:local": "wrangler d1 execute plotline --local --command \"SELECT created_at, kind, COALESCE(email, '-') AS email, message, context FROM feedback ORDER BY created_at DESC LIMIT 50\"",
     "requests": "wrangler d1 execute plotline --remote --command \"SELECT created_at, name, category, w, d, z, COALESCE(email, '-') AS email, notes, photos FROM item_requests ORDER BY created_at DESC LIMIT 50\" && echo 'Fetch a photo: npx wrangler r2 object get plotline-files/<key> --remote --file photo.jpg'",
     "requests:local": "wrangler d1 execute plotline --local --command \"SELECT created_at, name, category, w, d, z, COALESCE(email, '-') AS email, notes, photos FROM item_requests ORDER BY created_at DESC LIMIT 50\"",
+    "stats": "node scripts/stats.mjs",
     "deploy:apex": "wrangler deploy -c wrangler.apex.jsonc"
   },
   "dependencies": {
