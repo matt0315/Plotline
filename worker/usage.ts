@@ -31,6 +31,11 @@ export const track = async (req: Request, env: AppEnv) => {
   const day = new Date().toISOString().slice(0, 10)
   const stmts = [env.DB.prepare('INSERT INTO usage_daily (day, event, n) VALUES (?, ?, 1) ON CONFLICT (day, event) DO UPDATE SET n = n + 1').bind(day, variant ? `${name}:${variant}` : name)]
   if (/^[a-z0-9-]{8,64}$/.test(body?.d ?? '')) stmts.push(env.DB.prepare('INSERT OR IGNORE INTO usage_devices (day, device) VALUES (?, ?)').bind(day, await sha256(`${day}:${body!.d}`)))
+  // Keep 12 months, as the privacy policy says. Pruned now and then rather than on a schedule.
+  if (Math.random() < 0.01) {
+    const cutoff = new Date(Date.now() - 365 * 86400e3).toISOString().slice(0, 10)
+    stmts.push(env.DB.prepare('DELETE FROM usage_daily WHERE day < ?').bind(cutoff), env.DB.prepare('DELETE FROM usage_devices WHERE day < ?').bind(cutoff))
+  }
   await env.DB.batch(stmts)
   return ok()
 }

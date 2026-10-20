@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Crown, MessageSquarePlus, LogIn, LogOut, Check, Loader2, CreditCard, Home as HomeIcon, FlaskConical, BookOpen } from 'lucide-react'
+import { Crown, MessageSquarePlus, LogIn, LogOut, Check, Loader2, CreditCard, Home as HomeIcon, FlaskConical, BookOpen, Shield } from 'lucide-react'
 import { GATE_COPY, setDevPro, signIn, signOut, useAccount } from '../store/account'
 import { useUI } from '../store/ui'
 import { api } from '../lib/api'
@@ -139,7 +139,12 @@ export const SignInDialog = () => {
             send()
           }}
         >
-          <p className="mb-3 text-sm text-slate-600">We'll email you a link — no password.</p>
+          <p className="mb-3 text-sm text-slate-600">
+            We'll email you a link — no password.{' '}
+            <a href="/privacy/" target="_blank" rel="noopener" className="underline hover:text-slate-800">
+              Privacy
+            </a>
+          </p>
           <input className="input" type="email" autoFocus placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Button variant="primary" className="mt-3 w-full" disabled={busy}>
             {busy && <Loader2 size={16} className="animate-spin" />} Email me a link
@@ -180,6 +185,9 @@ export const AccountMenu = () => {
           </MenuItem>
           <MenuItem icon={<BookOpen size={16} />} onClick={() => (window.open('/help/', '_blank', 'noopener'), setOpen(false))}>
             How to use Plotline
+          </MenuItem>
+          <MenuItem icon={<Shield size={16} />} onClick={() => (window.open('/privacy/', '_blank', 'noopener'), setOpen(false))}>
+            Privacy policy
           </MenuItem>
           <MenuItem icon={<MessageSquarePlus size={16} />} onClick={() => (useUI.getState().set({ feedbackOpen: true }), setOpen(false))}>
             Send feedback
