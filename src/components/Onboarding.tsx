@@ -157,6 +157,22 @@ export const Onboarding = () => {
           </div>
         </aside>
       </div>
+      <footer className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-1 px-4 pb-8 text-xs text-slate-500">
+        {SITE_LINKS.map(([href, label]) => (
+          <a key={href} href={href} className="hover:text-slate-800">
+            {label}
+          </a>
+        ))}
+      </footer>
     </div>
   )
 }
+
+const SITE_LINKS = [
+  ['/event-floor-plan/', 'Event floor plans'],
+  ['/wedding-seating-chart/', 'Wedding seating charts'],
+  ['/marquee-layout-planner/', 'Marquee layouts'],
+  ['/event-run-sheet/', 'Run sheets'],
+  ['/help/', 'Help'],
+  ['/privacy/', 'Privacy'],
+]

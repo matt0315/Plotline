@@ -46,6 +46,8 @@ const boot = async () => {
   const token = params.get('s')
   track(token ? 'shared_view' : 'app_open')
   if (token) {
+    // Shared events are private to whoever has the link: keep them out of search results.
+    document.head.append(Object.assign(document.createElement('meta'), { name: 'robots', content: 'noindex' }))
     const shared = await loadCloudShare(token)
     if (shared) {
       if (shared.plan) seedPlan(shared.plan)

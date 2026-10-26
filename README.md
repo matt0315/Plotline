@@ -131,6 +131,7 @@ npm run dev
    - active browsers per day, from a random id hashed with the date.
 
    No event content, account or IP is stored, and Do Not Track is honoured.
+   **Search pages.** The marketing pages (`/event-floor-plan/`, `/wedding-seating-chart/`, `/marquee-layout-planner/`, `/event-run-sheet/`, `/goodevent-alternative/`), `robots.txt` and `sitemap.xml` are generated from `scripts/pages.mjs`. Edit the words there, run `npm run pages`, then deploy. Screenshots live in `public/img/`.
 6. **Feedback and item-request alerts.** Both are always saved to D1. Run `npm run feedback` or `npm run requests` to read the latest 50. Each one is also emailed to `FEEDBACK_TO` (set in `wrangler.jsonc` to `hello@plotlineapp.online`, which Cloudflare Email Routing forwards to the owner's inbox). This needs Email Sending set up (step 2). Replying goes straight to the sender when they left an email.
 
 6. **DWG (optional).** Run `npx wrangler secret put CLOUDCONVERT_API_KEY`. The browser uploads directly to CloudConvert, and jobs are tagged with the user's ID. LibreDWG is deliberately not used because it's GPL v3.
