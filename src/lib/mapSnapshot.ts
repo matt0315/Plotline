@@ -1,5 +1,6 @@
-import type { EventDoc } from '../types/event'
+import type { EventDoc, VenuePlan } from '../types/event'
 import { rectLatLngs } from './geometry'
+import { LINE_KINDS, linePath } from './siteLines'
 import { tileSource, tileUrl } from './tiles'
 
 const TILE = 256
@@ -23,9 +24,13 @@ const loadTile = (url: string) =>
  * Draws the site map — imagery, zones and assets — onto a canvas for print.
  * Framed to everything placed, or the venue if the map is empty.
  */
-export const snapshotSite = async (d: EventDoc, maxW = 1800, maxH = 1200): Promise<{ png: string; w: number; h: number; attribution: string }> => {
+export const snapshotSite = async (d: EventDoc, maxW = 1800, maxH = 1200, aerial?: VenuePlan | null): Promise<{ png: string; w: number; h: number; attribution: string }> => {
   const src = tileSource()
-  const pts: [number, number][] = [...d.site.zones.flatMap((z) => z.points), ...d.site.items.flatMap((i) => rectLatLngs(i.lat, i.lng, i.w, i.h, i.rotation))]
+  const pts: [number, number][] = [
+    ...d.site.zones.flatMap((z) => z.points),
+    ...d.site.items.flatMap((i) => rectLatLngs(i.lat, i.lng, i.w, i.h, i.rotation)),
+    ...(d.site.lines ?? []).flatMap((l) => l.points),
+  ]
   if (!pts.length) pts.push([d.venue.lat, d.venue.lng])
   const lats = pts.map((p) => p[0])
   const lngs = pts.map((p) => p[1])
@@ -65,6 +70,20 @@ export const snapshotSite = async (d: EventDoc, maxW = 1800, maxH = 1200): Promi
       )
   await Promise.all(tiles)
 
+  const ov = d.site.overlay
+  if (ov && aerial?.image) {
+    const { overlayBounds } = await import('../modules/SiteMap/aerial')
+    const [[s, w], [n, e]] = overlayBounds(ov, aerial)
+    const img = await loadTile(aerial.image)
+    if (img) {
+      const a = project(n, w, z)
+      const b = project(s, e, z)
+      ctx.globalAlpha = ov.opacity
+      ctx.drawImage(img, a.x - tl.x, a.y - tl.y, b.x - a.x, b.y - a.y)
+      ctx.globalAlpha = 1
+    }
+  }
+
   const toPx = (lat: number, lng: number) => {
     const p = project(lat, lng, z)
     return [p.x - tl.x, p.y - tl.y] as const
@@ -96,6 +115,21 @@ export const snapshotSite = async (d: EventDoc, maxW = 1800, maxH = 1200): Promi
     ctx.setLineDash([10, 7])
     ctx.lineWidth = 3
     ctx.strokeStyle = zn.color
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+  for (const l of d.site.lines ?? []) {
+    const k = LINE_KINDS[l.kind]
+    ctx.beginPath()
+    linePath(l).forEach(([la, ln], i) => {
+      const [x, y] = toPx(la, ln)
+      if (i) ctx.lineTo(x, y)
+      else ctx.moveTo(x, y)
+    })
+    ctx.setLineDash(k.dash ? k.dash.split(' ').map((n) => Number(n) * 1.4) : [])
+    ctx.lineCap = l.kind === 'cable' ? 'round' : 'butt'
+    ctx.lineWidth = k.weight * 1.4
+    ctx.strokeStyle = l.color
     ctx.stroke()
     ctx.setLineDash([])
   }

@@ -6,6 +6,7 @@ import { sightlineSummary } from './sightlines'
 import { toMinutes } from './time'
 import { crewCost, dayRole, doubleBookings, eventLength, openPositions } from './roster'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
+import { lineLoad } from './siteLines'
 import { clearanceIssues, isSeating, seatsLocal } from './geometry'
 
 /* ---------- Budget ---------- */
@@ -143,7 +144,7 @@ export const loadList = (d: EventDoc): [string, number][] => {
   const rows: [string, number][] = kitRows(d).map((r) => [r.label, r.qty])
   const site = new Map<string, number>()
   for (const s of d.site.items) site.set(`${SITE_KIND_LABEL[s.kind]} (site)`, (site.get(`${SITE_KIND_LABEL[s.kind]} (site)`) ?? 0) + 1)
-  return [...rows, ...site.entries()].sort((a, b) => b[1] - a[1])
+  return [...rows, ...site.entries(), ...lineLoad(d)].sort((a, b) => b[1] - a[1])
 }
 
 /* ---------- What to do next ---------- */

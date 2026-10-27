@@ -188,6 +188,32 @@ export interface Measure {
   points: [number, number][]
 }
 
+export type SiteLineKind = 'fence' | 'barrier' | 'route' | 'cable'
+
+/** Something drawn along a path: temporary fencing, crowd barriers, a course route or a cable run. */
+export interface SiteLine {
+  id: ID
+  kind: SiteLineKind
+  points: [number, number][]
+  label: string
+  color: string
+  /** Joins back to the first point — a fenced-off area. */
+  closed?: boolean
+  /** Panel or barrier length in metres, for counting fences and barriers. */
+  panel?: number
+}
+
+/** Your own aerial or drone photo, laid over the satellite view. The image is stored like a venue drawing. */
+export interface SiteOverlay {
+  planId: ID
+  /** Centre of the photo. */
+  lat: number
+  lng: number
+  /** How wide the photo is on the ground, in metres. */
+  widthM: number
+  opacity: number
+}
+
 export type Rsvp = 'pending' | 'yes' | 'no' | 'maybe'
 
 export interface Seat {
@@ -373,7 +399,7 @@ export interface EventDoc {
   budgetTarget: number
   venue: Venue
 
-  site: { items: SiteItem[]; zones: Zone[]; measures: Measure[] }
+  site: { items: SiteItem[]; zones: Zone[]; measures: Measure[]; lines: SiteLine[]; overlay?: SiteOverlay }
   layout: { spaces: Space[]; items: LayoutItem[]; basePlan?: BasePlanPlacement }
   guests: Guest[]
   schedule: ScheduleItem[]

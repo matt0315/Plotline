@@ -53,7 +53,7 @@ export const packDoc = (d: EventDoc, p: { audience: PackAudience; opts: PackOpti
     schedule: o.run ? d.schedule : d.schedule.filter(forThem),
     // The load list is worked out from the floor plan, so a load-list-only pack still needs its items.
     layout: o.floor ? d.layout : o.load ? { spaces: d.layout.spaces, items: d.layout.items } : { spaces: [], items: [] },
-    site: o.site ? d.site : { items: [], zones: [], measures: [] },
+    site: o.site ? d.site : { items: [], zones: [], measures: [], lines: [] },
   }
 }
 

@@ -202,12 +202,35 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
     newPage(p, first, 'landscape')
     const y = heading(p, 'Site map', [d.venue.name, `${d.site.items.length} assets`, `${d.site.zones.length} zones`].filter(Boolean).join(' · '))
     const { snapshotSite } = await import('./mapSnapshot')
-    const snap = await snapshotSite(d)
+    const { siteLegend } = await import('./siteLines')
+    const ov = d.site.overlay
+    const aerial = ov ? (usePlans.getState().cache[ov.planId] ?? (await storage().loadPlan(ov.planId))) : null
+    const snap = await snapshotSite(d, 2400, 1600, aerial)
+    const legend = siteLegend(d)
+    // The legend runs in columns under the map.
+    const cols = 3
+    const legendH = legend.length ? Math.ceil(legend.length / cols) * 12 + 18 : 0
     const bw = W(p) - M * 2
-    const bh = H(p) - y - 60
+    const bh = H(p) - y - 60 - legendH
     const k = Math.min(bw / snap.w, bh / snap.h)
     p.addImage(snap.png, 'JPEG', M + (bw - snap.w * k) / 2, y, snap.w * k, snap.h * k)
     p.setFontSize(7).setTextColor(...MUTED).text(snap.attribution, M + (bw + snap.w * k) / 2, y + snap.h * k + 10, { align: 'right' })
+    if (legend.length) {
+      const top = y + snap.h * k + 22
+      const cw = bw / cols
+      legend.forEach((r, i) => {
+        const x = M + (i % cols) * cw
+        const ly = top + Math.floor(i / cols) * 12
+        const [cr, cg, cb] = [1, 3, 5].map((o) => parseInt(r.swatch.color.slice(o, o + 2), 16))
+        if (r.swatch.shape === 'line') {
+          p.setDrawColor(cr, cg, cb).setLineWidth(2).setLineDashPattern(r.swatch.dash ? r.swatch.dash.split(' ').map(Number) : [], 0).line(x, ly - 3, x + 16, ly - 3).setLineDashPattern([], 0).setLineWidth(0.5)
+        } else if (r.swatch.shape === 'zone') {
+          p.setDrawColor(cr, cg, cb).setLineDashPattern([2, 1.5], 0).rect(x + 2, ly - 7, 12, 8).setLineDashPattern([], 0)
+        } else p.setFillColor(cr, cg, cb).rect(x + 2, ly - 7, 12, 8, 'F')
+        p.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...INK).text(r.label, x + 22, ly, { maxWidth: cw - 110 })
+        p.setTextColor(...MUTED).text(r.detail, x + cw - 14, ly, { align: 'right' })
+      })
+    }
   }
 
   if (has('seating')) {

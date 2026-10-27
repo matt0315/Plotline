@@ -114,14 +114,17 @@ const byToken = async (env: AppEnv, token: string) => {
 /** Anyone with the link: the event, plus metadata for its venue drawing (and which pack it is). */
 export const getShared = async (_req: Request, env: AppEnv, token: string) => {
   const { doc, pack } = await byToken(env, token)
-  const planId = doc.layout?.basePlan?.planId
-  const plan = planId ? await env.DB.prepare('SELECT * FROM venue_plans WHERE id = ?').bind(planId).first() : null
-  return json({ doc, plan, pack: pack ? { audience: pack.audience, opts: pack.opts } : null })
+  const row = (id?: string) => (id ? env.DB.prepare('SELECT * FROM venue_plans WHERE id = ?').bind(id).first() : null)
+  const plan = await row(doc.layout?.basePlan?.planId)
+  const aerial = await row(doc.site?.overlay?.planId)
+  return json({ doc, plan, aerial, pack: pack ? { audience: pack.audience, opts: pack.opts } : null })
 }
 
-export const getSharedPlanImage = async (_req: Request, env: AppEnv, token: string) => {
+/** The venue drawing, or with ?id= the aerial photo — only images the shared event actually uses. */
+export const getSharedPlanImage = async (req: Request, env: AppEnv, token: string) => {
   const { doc } = await byToken(env, token)
-  const planId = doc.layout?.basePlan?.planId
+  const want = new URL(req.url).searchParams.get('id')
+  const planId = want && want === doc.site?.overlay?.planId ? want : doc.layout?.basePlan?.planId
   const plan = planId ? await env.DB.prepare('SELECT owner FROM venue_plans WHERE id = ?').bind(planId).first<{ owner: string }>() : null
   const obj = plan && (await env.FILES.get(`plans/${plan.owner}/${planId}.png`))
   if (!obj) throw new HttpError(404, 'No venue drawing')

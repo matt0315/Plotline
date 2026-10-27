@@ -204,7 +204,7 @@ export const blankEvent = (over: Partial<EventDoc> = {}): EventDoc => {
     currency: 'USD',
     budgetTarget: 0,
     venue: { ...DEFAULT_VENUE },
-    site: { items: [], zones: [], measures: [] },
+    site: { items: [], zones: [], measures: [], lines: [] },
     layout: { spaces: [], items: [] },
     guests: [],
     schedule: [],
@@ -297,7 +297,7 @@ export const generateEvent = (input: GenerateInput): EventDoc => {
     budgetTarget: Math.ceil(budget.reduce((s, b) => s + b.estimate, 0) / 500) * 500,
     venue: input.venue,
     layout,
-    site: { ...site, measures: [] },
+    site: { ...site, measures: [], lines: [] },
     schedule: t.beats.map(([off, duration, title, phase, owner]) => ({
       id: uid('r'),
       time: addMinutes(start, off),

@@ -52,6 +52,7 @@ const boot = async () => {
     if (shared) {
       track(shared.pack ? 'pack_view' : 'shared_view', shared.pack?.audience.kind)
       if (shared.plan) seedPlan(shared.plan)
+      if (shared.aerial) seedPlan(shared.aerial)
       useEvent.getState().open(shared.doc, { readOnly: true })
       const form = params.get('form')
       useUI.getState().set({ tab: form ? 'docs' : shared.pack ? 'pack' : 'overview', focusId: form, shareToken: token, pack: shared.pack })

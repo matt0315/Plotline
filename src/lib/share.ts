@@ -50,11 +50,13 @@ export const revokeCloudShare = async (id: string) => {
 export const currentShareToken = async (id: string): Promise<string | null> =>
   (await api<{ token: string | null }>(`/api/events/${encodeURIComponent(id)}/share`).catch(() => ({ token: null }))).token
 
-export const loadCloudShare = async (token: string): Promise<{ doc: EventDoc; plan: VenuePlan | null; pack: Omit<Pack, 'token'> | null } | null> => {
-  const data = await api<{ doc: EventDoc; plan: PlanRow | null; pack?: Omit<Pack, 'token'> | null }>(`/api/shared/${encodeURIComponent(token)}`).catch(() => null)
+export const loadCloudShare = async (token: string): Promise<{ doc: EventDoc; plan: VenuePlan | null; aerial: VenuePlan | null; pack: Omit<Pack, 'token'> | null } | null> => {
+  const data = await api<{ doc: EventDoc; plan: PlanRow | null; aerial?: PlanRow | null; pack?: Omit<Pack, 'token'> | null }>(`/api/shared/${encodeURIComponent(token)}`).catch(() => null)
   if (!data) return null
-  const plan = data.plan ? await planFromRow(data.plan, `/api/shared/${encodeURIComponent(token)}/plan-image`) : null
-  return { doc: migrate(data.doc), plan, pack: data.pack ?? null }
+  const base = `/api/shared/${encodeURIComponent(token)}/plan-image`
+  const plan = data.plan ? await planFromRow(data.plan, base) : null
+  const aerial = data.aerial ? await planFromRow(data.aerial, `${base}?id=${encodeURIComponent(data.aerial.id)}`) : null
+  return { doc: migrate(data.doc), plan, aerial, pack: data.pack ?? null }
 }
 
 /* ---------- Packs: one live link per supplier, team or person ---------- */
