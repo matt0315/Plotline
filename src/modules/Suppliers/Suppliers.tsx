@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, Phone, Mail, HardHat } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, Phone, Mail, HardHat, Package } from 'lucide-react'
 import type { Supplier, SupplierStatus } from '../../types/event'
 import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
@@ -153,7 +153,10 @@ const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () =
             Balance due by
             <input className="input mt-1" type="date" value={s.dueDate} onChange={(e) => edit(s.id, (x) => void (x.dueDate = e.target.value), 'due')} />
           </label>
-          <div className="flex items-end justify-end">
+          <div className="flex items-end justify-end gap-2">
+            <Button size="sm" title="A live link with just their times, forms and part of the plan" onClick={() => useUI.getState().set({ shareOpen: true, packFocus: `supplier:${s.id}` })}>
+              <Package size={14} /> Send pack
+            </Button>
             <Button
               size="sm"
               variant="danger"

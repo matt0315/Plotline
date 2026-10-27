@@ -20,6 +20,7 @@ import {
   CloudOff,
   Cloud,
   Eye,
+  Package,
 } from 'lucide-react'
 import { useEvent, useMoney } from '../store/event'
 import { useUI } from '../store/ui'
@@ -41,11 +42,13 @@ const Suppliers = lazy(() => import('../modules/Suppliers/Suppliers'))
 const Budget = lazy(() => import('../modules/Budget/Budget'))
 const Docs = lazy(() => import('../modules/Docs/Docs'))
 const Crew = lazy(() => import('../modules/Crew/Crew'))
+const PackHome = lazy(() => import('../modules/Pack/PackHome'))
 const ExportDialog = lazy(() => import('./ExportDialog'))
 const ShareDialog = lazy(() => import('./ShareDialog'))
 const TablePlanDialog = lazy(() => import('./TablePlanDialog'))
 
 export const TABS: { id: Tab; label: string; icon: ReactNode; short?: string }[] = [
+  { id: 'pack', label: 'Your pack', icon: <Package size={18} />, short: 'Pack' },
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
   { id: 'layout', label: 'Floor plan', icon: <LayoutGrid size={18} />, short: 'Floor' },
   { id: 'site', label: 'Site map', icon: <MapIcon size={18} />, short: 'Site' },
@@ -85,6 +88,7 @@ const TopBar = () => {
   const go = useUI((s) => s.go)
   const b = budgetTotals(doc)
   const st = seatingStats(doc)
+  const pack = useUI((s) => s.pack)
 
   return (
     <header className="no-print flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-3">
@@ -96,7 +100,7 @@ const TopBar = () => {
         <ChevronDown size={14} className="shrink-0 text-slate-400" />
       </button>
 
-      <div className="ml-2 hidden items-center gap-1.5 md:flex">
+      <div className={`ml-2 hidden items-center gap-1.5 ${pack ? '' : 'md:flex'}`}>
         {b.target > 0 && (
           <button onClick={() => go('budget')} className={`rounded-full px-2.5 py-1 text-xs font-medium tabular-nums ${b.variance < 0 ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
             {b.variance < 0 ? `${money(-b.variance)} over` : `${money(b.variance)} under`}
@@ -128,20 +132,34 @@ const TopBar = () => {
         <Search size={18} />
       </IconButton>
       <FeedbackButton compact />
-      <Button size="sm" onClick={() => set({ shareOpen: true })} className="max-sm:hidden">
-        <Share2 size={14} /> Share
-      </Button>
-      <Button size="sm" variant="primary" onClick={() => set({ exportOpen: true })}>
-        <Download size={14} /> <span className="hidden sm:inline">Export pack</span>
-      </Button>
+      {!pack && (
+        <>
+          <Button size="sm" onClick={() => set({ shareOpen: true })} className="max-sm:hidden">
+            <Share2 size={14} /> Share
+          </Button>
+          <Button size="sm" variant="primary" onClick={() => set({ exportOpen: true })}>
+            <Download size={14} /> <span className="hidden sm:inline">Export pack</span>
+          </Button>
+        </>
+      )}
       <AccountMenu />
     </header>
   )
 }
 
+/** The tabs to show: everything, or just what a pack includes. */
+export const useTabs = () => {
+  const pack = useUI((s) => s.pack)
+  const docs = useEvent((s) => s.doc?.docs.length ?? 0)
+  if (!pack) return TABS.filter((t) => t.id !== 'pack')
+  const show: Partial<Record<Tab, boolean>> = { pack: true, layout: pack.opts.floor, site: pack.opts.site, run: pack.opts.run, docs: docs > 0 }
+  return TABS.filter((t) => show[t.id])
+}
+
 const Nav = () => {
   const tab = useUI((s) => s.tab)
   const go = useUI((s) => s.go)
+  const TABS = useTabs()
   return (
     <>
       <nav className="no-print hidden w-44 shrink-0 flex-col gap-0.5 border-r border-slate-200 bg-white p-2 md:flex">
@@ -170,7 +188,9 @@ const Nav = () => {
 
 const ReadOnlyBanner = () => {
   const readOnly = useEvent((s) => s.readOnly)
+  const pack = useUI((s) => s.pack)
   if (!readOnly) return null
+  if (pack) return null
   const saveCopy = async () => {
     const doc = useEvent.getState().doc
     if (!doc) return
@@ -190,6 +210,8 @@ const ReadOnlyBanner = () => {
 const Module = () => {
   const tab = useUI((s) => s.tab)
   switch (tab) {
+    case 'pack':
+      return <PackHome />
     case 'overview':
       return <Overview />
     case 'layout':

@@ -4,7 +4,7 @@ import { useUI } from '../store/ui'
 import { useEvent, update } from '../store/event'
 import { canCreateEvent } from '../store/actions'
 import { uid } from '../lib/id'
-import { TABS } from './Shell'
+import { useTabs } from './Shell'
 import { newGuest } from '../modules/Guests/guestActions'
 import { addFurniture } from '../modules/Layout/layoutActions'
 import { newSupplier } from '../modules/Suppliers/supplierActions'
@@ -35,11 +35,12 @@ export const CommandPalette = () => {
     }
   }, [open])
 
+  const tabs = useTabs()
   const cmds = useMemo<Cmd[]>(() => {
     if (!doc) return []
     const close = () => set({ palette: false })
     const base: Cmd[] = [
-      ...TABS.map((t) => ({ id: `go-${t.id}`, label: `Go to ${t.label}`, icon: t.icon, run: () => go(t.id) })),
+      ...tabs.map((t) => ({ id: `go-${t.id}`, label: `Go to ${t.label}`, icon: t.icon, run: () => go(t.id) })),
       {
         id: 'add-guest',
         label: 'Add guest',
@@ -100,7 +101,7 @@ export const CommandPalette = () => {
       .slice(0, 4)
       .map((s) => ({ id: s.id, label: s.name, hint: s.category, icon: <StoreIcon size={16} />, run: () => go('suppliers', s.id) }))
     return [...base.filter((c) => c.label.toLowerCase().includes(needle)), ...people, ...sups]
-  }, [doc, q, go, set])
+  }, [doc, q, go, set, tabs])
 
   if (!open) return null
   const run = (c?: Cmd) => c && c.run()

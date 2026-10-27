@@ -5,11 +5,13 @@ import { useUI } from '../store/ui'
 import { useAccount, gate } from '../store/account'
 import { createCloudShare, currentShareToken, download, revokeCloudShare, shareHash, slug } from '../lib/share'
 import { Button, Modal, toast } from './ui'
+import { PacksPanel } from './PacksPanel'
 
 export default function ShareDialog() {
   const d = useEvent((s) => s.doc)!
   const { isPro, user, cloud: cloudConfigured } = useAccount()
-  const close = () => useUI.getState().set({ shareOpen: false })
+  const close = () => useUI.getState().set({ shareOpen: false, packFocus: null })
+  const [view, setView] = useState<'all' | 'packs'>(useUI.getState().packFocus ? 'packs' : 'all')
   const [url, setUrl] = useState<string | null>(null)
   const [qr, setQr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -47,10 +49,27 @@ export default function ShareDialog() {
   }
 
   return (
-    <Modal open onClose={close} title="Share this plan" width="max-w-md">
-      {!isPro ? (
+    <Modal open onClose={close} title="Share this plan" width={view === 'packs' ? 'max-w-xl' : 'max-w-md'}>
+      {isPro && cloud && (
+        <div className="mb-4 flex rounded-lg bg-slate-100 p-0.5 text-sm font-medium">
+          {(
+            [
+              ['all', 'Whole plan'],
+              ['packs', 'Packs for suppliers & crew'],
+            ] as const
+          ).map(([v, label]) => (
+            <button key={v} onClick={() => setView(v)} className={`flex-1 rounded-md px-3 py-1.5 ${view === v ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {isPro && cloud && view === 'packs' ? (
+        <PacksPanel />
+      ) : !isPro ? (
         <div className="text-center">
           <p className="text-sm text-slate-600">Send clients and crew a view-only link that always shows the latest plan — floor plan, run sheet, forms and all. Crew can fill in forms from it, no login.</p>
+          <p className="mt-2 text-sm text-slate-600">Or give each supplier and crew team their own pack: just their times, their forms and their part of the plan.</p>
           <Button variant="primary" className="mt-4" onClick={() => gate('share')}>
             <Crown size={16} /> Unlock sharing
           </Button>

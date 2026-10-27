@@ -1,5 +1,5 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import type { DocResponse, EventDoc, VenuePlan } from '../types/event'
+import type { DocResponse, EventDoc, Pack, PackAudience, PackOptions, VenuePlan } from '../types/event'
 import { migrate } from '../store/migrate'
 import { planFromRow, storage, type PlanRow } from '../store/persistence'
 import { api } from './api'
@@ -50,12 +50,27 @@ export const revokeCloudShare = async (id: string) => {
 export const currentShareToken = async (id: string): Promise<string | null> =>
   (await api<{ token: string | null }>(`/api/events/${encodeURIComponent(id)}/share`).catch(() => ({ token: null }))).token
 
-export const loadCloudShare = async (token: string): Promise<{ doc: EventDoc; plan: VenuePlan | null } | null> => {
-  const data = await api<{ doc: EventDoc; plan: PlanRow | null }>(`/api/shared/${encodeURIComponent(token)}`).catch(() => null)
+export const loadCloudShare = async (token: string): Promise<{ doc: EventDoc; plan: VenuePlan | null; pack: Omit<Pack, 'token'> | null } | null> => {
+  const data = await api<{ doc: EventDoc; plan: PlanRow | null; pack?: Omit<Pack, 'token'> | null }>(`/api/shared/${encodeURIComponent(token)}`).catch(() => null)
   if (!data) return null
   const plan = data.plan ? await planFromRow(data.plan, `/api/shared/${encodeURIComponent(token)}/plan-image`) : null
-  return { doc: migrate(data.doc), plan }
+  return { doc: migrate(data.doc), plan, pack: data.pack ?? null }
 }
+
+/* ---------- Packs: one live link per supplier, team or person ---------- */
+
+const packsUrl = (eventId: string) => `/api/events/${encodeURIComponent(eventId)}/packs`
+
+export const listPacks = (eventId: string) => api<Pack[]>(packsUrl(eventId)).catch(() => [] as Pack[])
+
+export const savePack = (eventId: string, audience: PackAudience, opts: PackOptions) => {
+  track('pack_saved', audience.kind)
+  return api<Pack>(packsUrl(eventId), { method: 'POST', json: { audience, opts } })
+}
+
+export const deletePack = (eventId: string, token: string) => api(`${packsUrl(eventId)}/${encodeURIComponent(token)}`, { method: 'DELETE' })
+
+export const packUrl = (token: string) => `${location.origin}/?s=${token}`
 
 /** Crew filling a form from a share link — no account. */
 export const submitSharedResponse = (token: string, formId: string, response: DocResponse) =>

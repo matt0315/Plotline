@@ -148,7 +148,7 @@ export const loadList = (d: EventDoc): [string, number][] => {
 
 /* ---------- What to do next ---------- */
 
-export type Tab = 'overview' | 'layout' | 'site' | 'guests' | 'run' | 'suppliers' | 'budget' | 'docs' | 'crew'
+export type Tab = 'pack' | 'overview' | 'layout' | 'site' | 'guests' | 'run' | 'suppliers' | 'budget' | 'docs' | 'crew'
 
 export const nextSteps = (d: EventDoc): { text: string; tab: Tab }[] => {
   const out: { text: string; tab: Tab }[] = []

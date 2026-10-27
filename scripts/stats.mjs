@@ -42,6 +42,8 @@ const LABEL = {
   import_drawing: 'Venue drawing imported',
   kit_item: 'Kit item added',
   share_created: 'Share link made',
+  pack_saved: 'Pack link saved',
+  pack_view: 'Pack opened',
   signin_start: 'Sign-in started',
   upgrade_click: 'Upgrade clicked',
 }

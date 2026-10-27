@@ -16,6 +16,8 @@ const EVENTS = new Set([
   'import_drawing',
   'kit_item',
   'share_created',
+  'pack_saved',
+  'pack_view',
   'signin_start',
   'upgrade_click',
 ])

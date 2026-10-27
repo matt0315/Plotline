@@ -1,5 +1,6 @@
 import { type AppEnv, HttpError, checkOrigin, json } from './lib'
 import { devSetPro, me, signOut, startSignIn, verifySignIn } from './auth'
+import * as packs from './packs'
 import * as events from './events'
 import * as plans from './plans'
 import * as billing from './billing'
@@ -27,6 +28,9 @@ const ROUTES: [string, string, Handler][] = [
   ['POST', '/api/events/:id/share', events.createShare],
   ['DELETE', '/api/events/:id/share', events.revokeShare],
   ['GET', '/api/events/:id/responses', events.listResponses],
+  ['GET', '/api/events/:id/packs', packs.listPacks],
+  ['POST', '/api/events/:id/packs', packs.savePack],
+  ['DELETE', '/api/events/:id/packs/:token', packs.deletePack],
   ['DELETE', '/api/events/:id/responses', events.clearResponses],
 
   ['GET', '/api/shared/:token', events.getShared],

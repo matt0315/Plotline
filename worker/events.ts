@@ -1,4 +1,7 @@
+import type { EventDoc, Pack } from '../src/types/event'
 import { type AppEnv, HttpError, json, randomToken, readJson, requirePro, requireUser } from './lib'
+import { packByToken } from './packs'
+import { packDoc } from '../src/lib/packs'
 
 const docKey = (owner: string, id: string) => `events/${owner}/${id}.json`
 const ID = /^[\w-]{3,64}$/
@@ -13,7 +16,7 @@ interface EventRow {
   updated_at: string
 }
 
-const ownEvent = async (env: AppEnv, id: string, userId: string) => {
+export const ownEvent = async (env: AppEnv, id: string, userId: string) => {
   if (!ID.test(id)) throw new HttpError(400, 'Bad event id')
   const row = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first<EventRow>()
   if (!row || row.owner !== userId) throw new HttpError(404, 'Event not found')
@@ -64,7 +67,11 @@ export const deleteEvent = async (req: Request, env: AppEnv, id: string) => {
   const u = await requireUser(req, env)
   const row = await ownEvent(env, id, u.id)
   await env.FILES.delete(docKey(row.owner, id))
-  await env.DB.batch([env.DB.prepare('DELETE FROM form_responses WHERE event_id = ?').bind(id), env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id)])
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM form_responses WHERE event_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM packs WHERE event_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id),
+  ])
   return json({ ok: true })
 }
 
@@ -92,21 +99,24 @@ export const revokeShare = async (req: Request, env: AppEnv, id: string) => {
   return json({ ok: true })
 }
 
+/** A whole-event share link, or a pack for one audience — which gets the event cut down to their part. */
 const byToken = async (env: AppEnv, token: string) => {
   if (!token || token.length < 16) throw new HttpError(404, 'Link not found')
-  const row = await env.DB.prepare('SELECT id, owner FROM events WHERE share_token = ?').bind(token).first<{ id: string; owner: string }>()
-  if (!row) throw new HttpError(404, 'This link has expired or been turned off')
-  const obj = await env.FILES.get(docKey(row.owner, row.id))
+  const shared = await env.DB.prepare('SELECT id, owner FROM events WHERE share_token = ?').bind(token).first<{ id: string; owner: string }>()
+  const found: { row: { id: string; owner: string }; pack?: Pack } | null = shared ? { row: shared } : await packByToken(env, token)
+  if (!found) throw new HttpError(404, 'This link has expired or been turned off')
+  const obj = await env.FILES.get(docKey(found.row.owner, found.row.id))
   if (!obj) throw new HttpError(404, 'Link not found')
-  return { row, doc: (await obj.json()) as { layout?: { basePlan?: { planId?: string } }; docs?: { id: string }[] } }
+  const full = (await obj.json()) as EventDoc
+  return { row: found.row, pack: found.pack, doc: found.pack ? packDoc(full, found.pack) : full }
 }
 
-/** Anyone with the link: the event, plus metadata for its venue drawing. */
+/** Anyone with the link: the event, plus metadata for its venue drawing (and which pack it is). */
 export const getShared = async (_req: Request, env: AppEnv, token: string) => {
-  const { doc } = await byToken(env, token)
+  const { doc, pack } = await byToken(env, token)
   const planId = doc.layout?.basePlan?.planId
   const plan = planId ? await env.DB.prepare('SELECT * FROM venue_plans WHERE id = ?').bind(planId).first() : null
-  return json({ doc, plan })
+  return json({ doc, plan, pack: pack ? { audience: pack.audience, opts: pack.opts } : null })
 }
 
 export const getSharedPlanImage = async (_req: Request, env: AppEnv, token: string) => {

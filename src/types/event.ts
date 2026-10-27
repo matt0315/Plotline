@@ -417,3 +417,32 @@ export interface VenuePlan {
 }
 
 export const SCHEMA_VERSION = 1
+
+/* ---------- Packs: a live link for one audience ---------- */
+
+/** Who a pack is for: one supplier, a crew team (a roster section), or one crew member. */
+export interface PackAudience {
+  kind: 'supplier' | 'team' | 'crew'
+  /** Supplier or crew id; for a team, the roster section name. */
+  id: string
+  label: string
+}
+
+/** What a pack shows besides their own times and forms. */
+export interface PackOptions {
+  floor: boolean
+  site: boolean
+  /** The whole run sheet, not just their part. */
+  run: boolean
+  load: boolean
+  /** Dietary needs by table, without names — for caterers. */
+  dietary: boolean
+  /** Other suppliers' and crew's phone numbers. */
+  contacts: boolean
+}
+
+export interface Pack {
+  token: string
+  audience: PackAudience
+  opts: PackOptions
+}

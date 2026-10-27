@@ -44,16 +44,17 @@ const boot = async () => {
 
   // Shared links open read-only and never touch local storage.
   const token = params.get('s')
-  track(token ? 'shared_view' : 'app_open')
+  if (!token) track('app_open')
   if (token) {
     // Shared events are private to whoever has the link: keep them out of search results.
     document.head.append(Object.assign(document.createElement('meta'), { name: 'robots', content: 'noindex' }))
     const shared = await loadCloudShare(token)
     if (shared) {
+      track(shared.pack ? 'pack_view' : 'shared_view', shared.pack?.audience.kind)
       if (shared.plan) seedPlan(shared.plan)
       useEvent.getState().open(shared.doc, { readOnly: true })
       const form = params.get('form')
-      useUI.getState().set({ tab: form ? 'docs' : 'overview', focusId: form, shareToken: token })
+      useUI.getState().set({ tab: form ? 'docs' : shared.pack ? 'pack' : 'overview', focusId: form, shareToken: token, pack: shared.pack })
       return useUI.getState().setScreen('workspace')
     }
     toast('That share link has expired or been turned off')
