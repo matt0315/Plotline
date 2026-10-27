@@ -7,12 +7,12 @@ import { StaticPlan } from '../modules/Layout/render'
 import { storage } from '../store/persistence'
 import { usePlans } from '../store/plans'
 import { useAccount } from '../store/account'
-import { budgetTotals, crewCost, lineActual, linePaid, loadList, runSheet, seatingStats } from './derived'
+import { budgetTotals, crewCost, lineActual, linePaid, loadList, runDays, runSheet, seatingStats } from './derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { pdfMoneyFor } from './money'
 import { kitRows } from './kit'
 import { fmt12 } from './time'
-import { crewHours, dayTitle, sortShifts } from './roster'
+import { crewHours, dayTitle, eventLength, relLabel, sortShifts } from './roster'
 import { isSeating } from './geometry'
 import { BRAND } from './brand'
 import { slug } from './share'
@@ -151,6 +151,8 @@ const stamp = (p: jsPDF, d: EventDoc, watermark: boolean) => {
 }
 
 export const exportPack = async (d: EventDoc, sections: Section[]) => {
+  /** "9:00 am", or "Day before 9:00 am" when they arrive on another day. */
+  const arrives = (s: EventDoc['suppliers'][number]) => (s.arrival ? `${s.arrivalDay ? relLabel(s.arrivalDay, eventLength(d)) + ' ' : ''}${fmt12(s.arrival)}` : '')
   track('export', sections.length === 1 ? sections[0] : 'pack')
   const money = pdfMoneyFor(d.currency)
   const watermark = !useAccount.getState().isPro
@@ -186,7 +188,7 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
     const contacts = d.suppliers.filter((s) => (s.status === 'booked' || s.status === 'paid') && (s.phone || s.contact))
     if (contacts.length) {
       p.setFont('helvetica', 'bold').setFontSize(12).setTextColor(...INK).text('Key contacts', M, p.lastAutoTable!.finalY + 36)
-      table(p, p.lastAutoTable!.finalY + 46, ['Supplier', 'Contact', 'Phone', 'Arrives'], contacts.map((s) => [`${s.name} (${s.category})`, s.contact, s.phone, s.arrival ? fmt12(s.arrival) : '']))
+      table(p, p.lastAutoTable!.finalY + 46, ['Supplier', 'Contact', 'Phone', 'Arrives'], contacts.map((s) => [`${s.name} (${s.category})`, s.contact, s.phone, arrives(s)]))
     }
   }
 
@@ -276,22 +278,33 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
 
   if (has('run')) {
     newPage(p, first, 'portrait')
-    const rows = runSheet(d)
-    const y = heading(p, 'Run sheet', d.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-US', { dateStyle: 'full' }) : undefined)
-    table(
-      p,
-      y,
-      ['Time', 'Min', 'What', 'Who', 'Where', 'Notes'],
-      rows.map((r) => [fmt12(r.time), r.duration || '', r.title, r.owner, r.location, r.notes]),
-      {
-        columnStyles: { 0: { cellWidth: 52 }, 1: { cellWidth: 30 }, 2: { cellWidth: 170 } },
-        didParseCell: (c) => {
-          const r = rows[c.row.index]
-          if (c.section === 'body' && r?.source) c.cell.styles.textColor = MUTED
-          if (c.section === 'body' && r && c.column.index === 0) c.cell.styles.fontStyle = 'bold'
+    const all = runSheet(d)
+    const days = runDays(d, all)
+    const len = eventLength(d)
+    let y = heading(p, 'Run sheet', days.length > 1 ? `${days.length} days · ${dayTitle(d.date, days[0], len)} to ${dayTitle(d.date, days[days.length - 1], len)}` : d.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-US', { dateStyle: 'full' }) : undefined)
+    for (const day of days) {
+      const rows = all.filter((r) => r.day === day)
+      if (!rows.length) continue
+      if (days.length > 1) {
+        if (y > H(p) - 120) (p.addPage('letter', 'portrait'), (y = M))
+        p.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK).text(dayTitle(d.date, day, len), M, y + 4)
+        y += 10
+      }
+      y = table(
+        p,
+        y,
+        ['Time', 'Min', 'What', 'Who', 'Where', 'Notes'],
+        rows.map((r) => [fmt12(r.time), r.duration || '', r.title, r.owner, r.location, r.notes]),
+        {
+          columnStyles: { 0: { cellWidth: 52 }, 1: { cellWidth: 30 }, 2: { cellWidth: 170 } },
+          didParseCell: (c) => {
+            const r = rows[c.row.index]
+            if (c.section === 'body' && r?.source) c.cell.styles.textColor = MUTED
+            if (c.section === 'body' && r && c.column.index === 0) c.cell.styles.fontStyle = 'bold'
+          },
         },
-      },
-    )
+      )
+    }
   }
 
   if (has('suppliers')) {
@@ -301,7 +314,7 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
       p,
       y,
       ['Supplier', 'Category', 'Status', 'Contact', 'Phone', 'Arrive', 'Quote', 'Paid'],
-      d.suppliers.filter((s) => s.status !== 'declined').map((s) => [s.name, s.category, s.status, s.contact, s.phone, s.arrival ? fmt12(s.arrival) : '', s.quote ? money(s.quote) : '', s.paid ? money(s.paid) : '']),
+      d.suppliers.filter((s) => s.status !== 'declined').map((s) => [s.name, s.category, s.status, s.contact, s.phone, arrives(s), s.quote ? money(s.quote) : '', s.paid ? money(s.paid) : '']),
     )
   }
 
@@ -319,7 +332,7 @@ export const exportPack = async (d: EventDoc, sections: Section[]) => {
     }
     for (const day of days) {
       if (y > H(p) - 120) (p.addPage('letter', 'portrait'), (y = M))
-      p.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK).text(dayTitle(d.date, day), M, y + 4)
+      p.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK).text(dayTitle(d.date, day, eventLength(d)), M, y + 4)
       y = table(
         p,
         y + 10,

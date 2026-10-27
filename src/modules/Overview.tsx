@@ -5,7 +5,7 @@ import { usePlan } from '../store/plans'
 import { budgetTotals, loadList, nextSteps, runSheet, seatingStats } from '../lib/derived'
 import { EVENT_TEMPLATES } from '../data/eventTemplates'
 import { daysUntil, fmt12 } from '../lib/time'
-import { openPositions, relLabel } from '../lib/roster'
+import { eventLength, openPositions, relLabel } from '../lib/roster'
 import { StaticPlan } from './Layout/render'
 import { VenueSearch } from '../components/VenueSearch'
 import { Stat, Select } from '../components/ui'
@@ -37,7 +37,7 @@ export const Overview = () => {
   const st = seatingStats(d)
   const b = budgetTotals(d)
   const steps = nextSteps(d)
-  const rows = runSheet(d).filter((r) => r.phase === 'event')
+  const rows = runSheet(d).filter((r) => r.day === 0 && r.phase === 'event')
   const days = daysUntil(d.date)
   const booked = d.suppliers.filter((s) => s.status === 'booked' || s.status === 'paid').length
   const live = d.suppliers.filter((s) => s.status !== 'declined').length
@@ -208,7 +208,7 @@ export const Overview = () => {
               value={d.crew.length}
               sub={
                 d.shifts.length
-                  ? `${d.shifts.length} shifts${openPositions(d) ? ` · ${openPositions(d)} to fill` : ''}${Math.min(...d.shifts.map((s) => s.day)) < 0 ? ` · from ${relLabel(Math.min(...d.shifts.map((s) => s.day))).toLowerCase()}` : ''}`
+                  ? `${d.shifts.length} shifts${openPositions(d) ? ` · ${openPositions(d)} to fill` : ''}${Math.min(...d.shifts.map((s) => s.day)) < 0 ? ` · from ${relLabel(Math.min(...d.shifts.map((s) => s.day)), eventLength(d)).toLowerCase()}` : ''}`
                   : 'No roster yet'
               }
             />

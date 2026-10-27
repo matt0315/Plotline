@@ -3,7 +3,7 @@ import { Plus, Trash2, ChevronDown, ChevronRight, Wallet, Check, Scale, Store, P
 import type { Supplier, SupplierStatus } from '../../types/event'
 import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
-import { dayTitle, newShift, sortShifts } from '../../lib/roster'
+import { dayTitle, eventLength, newShift, relLabel, sortShifts } from '../../lib/roster'
 import { addMinutes, fmt12 } from '../../lib/time'
 import { sectionColor } from '../../data/roster'
 import { choose, linkToBudget, newSupplier, SUPPLIER_CATEGORIES } from './supplierActions'
@@ -55,7 +55,7 @@ const SupplierRoster = ({ supplierId }: { supplierId: string }) => {
           {shifts.map((sh) => (
             <li key={sh.id}>
               <button onClick={() => useUI.getState().go('crew', sh.id)} className="flex w-full gap-2 rounded px-1 py-0.5 text-left hover:bg-slate-50">
-                <span className="w-40 shrink-0 text-slate-500">{dayTitle(d.date, sh.day)}</span>
+                <span className="w-40 shrink-0 text-slate-500">{dayTitle(d.date, sh.day, eventLength(d))}</span>
                 <span className="w-28 shrink-0 tabular-nums">
                   {fmt12(sh.start)}–{fmt12(sh.end)}
                 </span>
@@ -137,11 +137,17 @@ const Row = ({ s, open, onToggle }: { s: Supplier; open: boolean; onToggle: () =
           </label>
           <label className="text-xs text-slate-500">
             Arrives (on run sheet)
-            <input className="input mt-1" type="time" value={s.arrival} onChange={(e) => edit(s.id, (x) => void (x.arrival = e.target.value), 'arr')} />
+            <span className="mt-1 flex gap-1.5">
+              <DayPick value={s.arrivalDay} len={eventLength(d)} onChange={(v) => edit(s.id, (x) => void (x.arrivalDay = v || undefined), 'arrd')} />
+              <input className="input" type="time" value={s.arrival} onChange={(e) => edit(s.id, (x) => void (x.arrival = e.target.value), 'arr')} />
+            </span>
           </label>
           <label className="text-xs text-slate-500">
             Leaves
-            <input className="input mt-1" type="time" value={s.departure} onChange={(e) => edit(s.id, (x) => void (x.departure = e.target.value), 'dep')} />
+            <span className="mt-1 flex gap-1.5">
+              <DayPick value={s.departureDay} len={eventLength(d)} onChange={(v) => edit(s.id, (x) => void (x.departureDay = v || undefined), 'depd')} />
+              <input className="input" type="time" value={s.departure} onChange={(e) => edit(s.id, (x) => void (x.departure = e.target.value), 'dep')} />
+            </span>
           </label>
           <label className="text-xs text-slate-500">
             Balance due by
@@ -305,3 +311,14 @@ export default function Suppliers() {
     </div>
   )
 }
+
+/** Which day a supplier arrives or leaves: a week either side of the event. */
+const DayPick = ({ value = 0, len, onChange }: { value?: number; len: number; onChange: (v: number) => void }) => (
+  <select className="input w-32 shrink-0 cursor-pointer" value={value} onChange={(e) => onChange(parseInt(e.target.value))}>
+    {Array.from({ length: 15 + len - 1 }, (_, i) => i - 7).map((n) => (
+      <option key={n} value={n}>
+        {relLabel(n, len)}
+      </option>
+    ))}
+  </select>
+)

@@ -4,7 +4,7 @@ import { kitCost, kitRows } from './kit'
 import { egressIssues } from './capacity'
 import { sightlineSummary } from './sightlines'
 import { toMinutes } from './time'
-import { crewCost, doubleBookings, openPositions } from './roster'
+import { crewCost, dayRole, doubleBookings, eventLength, openPositions } from './roster'
 import { SITE_KIND_LABEL } from '../data/siteAssets'
 import { clearanceIssues, isSeating, seatsLocal } from './geometry'
 
@@ -74,6 +74,8 @@ export const initials = (name: string) =>
 
 export interface RunRow {
   id: string
+  /** Days relative to the event date: negative = set-up days, 0…length-1 = event days, then pack-down days. */
+  day: number
   time: string
   duration: number
   title: string
@@ -92,35 +94,46 @@ const relMinutes = (d: EventDoc, t: string) => {
   return ((m - toMinutes(d.startTime) + 1440 + 720) % 1440) - 720
 }
 
-const phaseFor = (d: EventDoc, time: string): Phase => {
+/** The first event day splits into set-up, event and pack-down by the event's own items; other days take their role. */
+const phaseFor = (d: EventDoc, day: number, time: string): Phase => {
+  const len = eventLength(d)
+  if (day !== 0) return dayRole(day, len)
   const t = relMinutes(d, time)
-  const ev = d.schedule.filter((s) => s.phase === 'event')
+  const ev = d.schedule.filter((s) => s.phase === 'event' && !s.day)
   const lo = ev.length ? Math.min(...ev.map((s) => relMinutes(d, s.time))) : 0
   const hi = ev.length ? Math.max(...ev.map((s) => relMinutes(d, s.time) + s.duration)) : 240
   return t < lo ? 'setup' : t >= hi ? 'breakdown' : 'event'
 }
 
+/** Every day with something on it, plus every event day, in order. */
+export const runDays = (d: EventDoc, rows: RunRow[] = runSheet(d)) => {
+  const days = new Set(rows.map((r) => r.day))
+  for (let i = 0; i < eventLength(d); i++) days.add(i)
+  return [...days].sort((a, b) => a - b)
+}
+
 export const runSheet = (d: EventDoc): RunRow[] => {
-  const rows: RunRow[] = d.schedule.map((s) => ({ ...s }))
+  const rows: RunRow[] = d.schedule.map((s) => ({ ...s, day: s.day ?? 0, phase: (s.day ?? 0) === 0 ? s.phase : dayRole(s.day!, eventLength(d)) }))
   for (const s of d.suppliers) {
     if (s.status === 'declined') continue
     const who = s.name || s.category
+    const ad = s.arrivalDay ?? 0
+    const dd = s.departureDay ?? 0
     if (s.arrival)
-      rows.push({ id: `sa-${s.id}`, time: s.arrival, duration: 0, title: `${who} arrives`, owner: s.contact, location: '', notes: s.phone, phase: phaseFor(d, s.arrival), source: { kind: 'supplier', id: s.id } })
+      rows.push({ id: `sa-${s.id}`, day: ad, time: s.arrival, duration: 0, title: `${who} arrives`, owner: s.contact, location: '', notes: s.phone, phase: phaseFor(d, ad, s.arrival), source: { kind: 'supplier', id: s.id } })
     if (s.departure)
-      rows.push({ id: `sd-${s.id}`, time: s.departure, duration: 0, title: `${who} departs`, owner: s.contact, location: '', notes: '', phase: phaseFor(d, s.departure), source: { kind: 'supplier', id: s.id } })
+      rows.push({ id: `sd-${s.id}`, day: dd, time: s.departure, duration: 0, title: `${who} departs`, owner: s.contact, location: '', notes: '', phase: phaseFor(d, dd, s.departure), source: { kind: 'supplier', id: s.id } })
   }
-  // Event-day roster shifts appear on the run sheet; other days are listed separately.
+  // Roster shifts appear on the day they're rostered.
   const names = new Map(d.crew.map((c) => [c.id, c.name || c.role]))
   for (const sh of d.shifts) {
-    if (sh.day !== 0) continue
     const sup = sh.supplierId ? d.suppliers.find((s) => s.id === sh.supplierId) : undefined
     const who = sup ? sup.name || sup.category : sh.crewIds.map((id) => names.get(id)).filter(Boolean).join(', ') || 'Unassigned'
     const gap = !sup && sh.crewIds.length < sh.needed ? ` · ${sh.needed - sh.crewIds.length} to fill` : ''
-    rows.push({ id: `sh-${sh.id}`, time: sh.start, duration: 0, title: `${sh.section}: ${sh.task || 'crew'}`, owner: who, location: sh.location, notes: `until ${sh.end}${gap}`, phase: phaseFor(d, sh.start), source: { kind: 'crew', id: sh.id } })
+    rows.push({ id: `sh-${sh.id}`, day: sh.day, time: sh.start, duration: 0, title: `${sh.section}: ${sh.task || 'crew'}`, owner: who, location: sh.location, notes: `until ${sh.end}${gap}`, phase: phaseFor(d, sh.day, sh.start), source: { kind: 'crew', id: sh.id } })
   }
   const order: Record<Phase, number> = { setup: 0, event: 1, breakdown: 2 }
-  return rows.sort((a, b) => order[a.phase] - order[b.phase] || relMinutes(d, a.time) - relMinutes(d, b.time))
+  return rows.sort((a, b) => a.day - b.day || order[a.phase] - order[b.phase] || relMinutes(d, a.time) - relMinutes(d, b.time))
 }
 
 /* ---------- Load list ---------- */

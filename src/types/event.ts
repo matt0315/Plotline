@@ -219,6 +219,8 @@ export interface ScheduleItem {
   location: string
   notes: string
   phase: Phase
+  /** Days relative to the event date, like a shift: -1 = the day before. Missing means the first event day. */
+  day?: number
 }
 
 export type SupplierStatus = 'researching' | 'quoted' | 'booked' | 'paid' | 'declined'
@@ -234,9 +236,12 @@ export interface Supplier {
   quote: number
   paid: number
   dueDate: string
-  /** Arrival / departure on event day — these appear on the run sheet automatically. */
+  /** Arrival / departure times — these appear on the run sheet automatically. */
   arrival: string
   departure: string
+  /** Which day they arrive and leave, relative to the event date (missing = the first event day). Hire drop-offs are often the day before. */
+  arrivalDay?: number
+  departureDay?: number
   notes: string
   budgetLineId?: ID
 }
@@ -361,6 +366,8 @@ export interface EventDoc {
   date: string
   startTime: string
   guestCount: number
+  /** How many days the event itself runs (missing = 1). Set-up days come before day 0, pack-down days after the last. */
+  eventDays?: number
   /** ISO code for planning amounts (budget, quotes, rates). Billing for Plotline itself is always USD. */
   currency: string
   budgetTarget: number

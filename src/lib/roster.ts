@@ -11,8 +11,19 @@ export const shiftHours = (s: Pick<Shift, 'start' | 'end'>) => {
   return ((b - a + 1440) % 1440 || 1440) / 60
 }
 
-export const relLabel = (day: number) =>
-  day === 0 ? 'Event day' : day === -1 ? 'Day before' : day === 1 ? 'Day after' : day < 0 ? `${-day} days before` : `${day} days after`
+/** How many days the event itself runs. */
+export const eventLength = (d: Pick<EventDoc, 'eventDays'>) => Math.max(1, Math.round(d.eventDays ?? 1))
+
+/** "Event day", "Day 2", "Day before", "3 days after" — days after count from the last event day. */
+export const relLabel = (day: number, len = 1) => {
+  if (day >= 0 && day < len) return len === 1 ? 'Event day' : `Day ${day + 1}`
+  if (day < 0) return day === -1 ? 'Day before' : `${-day} days before`
+  const after = day - len + 1
+  return after === 1 ? 'Day after' : `${after} days after`
+}
+
+/** Where a day sits: before the event (set-up), during it, or after (pack-down). */
+export const dayRole = (day: number, len = 1) => (day < 0 ? 'setup' : day >= len ? 'breakdown' : 'event')
 
 /** "Thu 10 Jun" for a day relative to the event date, or null with no date set. */
 export const dateLabel = (eventDate: string, day: number) => {
@@ -22,9 +33,9 @@ export const dateLabel = (eventDate: string, day: number) => {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-export const dayTitle = (eventDate: string, day: number) => {
+export const dayTitle = (eventDate: string, day: number, len = 1) => {
   const date = dateLabel(eventDate, day)
-  return date ? `${date} · ${relLabel(day)}` : relLabel(day)
+  return date ? `${date} · ${relLabel(day, len)}` : relLabel(day, len)
 }
 
 export const filled = (s: Shift) => (s.supplierId ? s.needed : s.crewIds.length)

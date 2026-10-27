@@ -4,7 +4,7 @@ import type { CrewMember, Shift } from '../../types/event'
 import { useEvent, update, useMoney } from '../../store/event'
 import { useUI } from '../../store/ui'
 import { SECTIONS, sectionColor } from '../../data/roster'
-import { crewCost, crewHours, dayTitle, doubleBookings, newShift, openPositions, relLabel, shiftHours, sortShifts, suggestedRoster } from '../../lib/roster'
+import { crewCost, crewHours, dayTitle, doubleBookings, eventLength, newShift, openPositions, relLabel, shiftHours, sortShifts, suggestedRoster } from '../../lib/roster'
 import { addMinutes, fmt12 } from '../../lib/time'
 import { currencySymbol } from '../../lib/money'
 import { uid } from '../../lib/id'
@@ -106,7 +106,7 @@ const ShiftEditor = ({ initial, onClose }: { initial: Shift; onClose: () => void
           <select className="input mt-1" value={s.day} onChange={(e) => set({ day: parseInt(e.target.value) })}>
             {DAY_OPTIONS.map((n) => (
               <option key={n} value={n}>
-                {dayTitle(d.date, n)}
+                {dayTitle(d.date, n, eventLength(d))}
               </option>
             ))}
           </select>
@@ -293,7 +293,7 @@ const Roster = ({ onEdit, personFilter, clearFilter }: { onEdit: (s: Shift) => v
           return (
             <section key={day} className={`card overflow-hidden ${day === 0 ? 'ring-1 ring-brand-200' : ''}`}>
               <header className={`flex items-center gap-2 border-b border-slate-100 px-4 py-2.5 ${day === 0 ? 'bg-brand-50/60' : ''}`}>
-                <h2 className="text-sm font-semibold">{dayTitle(d.date, day)}</h2>
+                <h2 className="text-sm font-semibold">{dayTitle(d.date, day, eventLength(d))}</h2>
                 <span className="text-xs text-slate-500">
                   {list.length} shift{list.length === 1 ? '' : 's'} · {hours.toFixed(0)} crew-hours
                 </span>
@@ -327,7 +327,7 @@ const Roster = ({ onEdit, personFilter, clearFilter }: { onEdit: (s: Shift) => v
                   }}
                   className="rounded-full bg-slate-100 px-2.5 py-1 text-xs hover:bg-brand-50 hover:text-brand-700"
                 >
-                  {relLabel(n)}
+                  {relLabel(n, eventLength(d))}
                 </button>
               ))}
             </div>
@@ -517,7 +517,7 @@ export default function Crew() {
                   const p = d.crew.find((x) => x.id === c.crewId)
                   return (
                     <li key={i}>
-                      <strong>{p?.name || p?.role || 'Someone'}</strong> is on <em>{c.a.section}</em> and <em>{c.b.section}</em> at the same time ({relLabel(c.a.day).toLowerCase()}).
+                      <strong>{p?.name || p?.role || 'Someone'}</strong> is on <em>{c.a.section}</em> and <em>{c.b.section}</em> at the same time ({relLabel(c.a.day, eventLength(d)).toLowerCase()}).
                     </li>
                   )
                 })}
